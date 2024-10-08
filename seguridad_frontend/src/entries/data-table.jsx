@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 
 import {
   flexRender,
@@ -20,46 +20,144 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import CalendarPlus2 from '../assets/calendar-plus.svg'
-import { useNavigate } from "react-router-dom"
 
-export function DataTable({ columns = [], data = [] }) {
+import { AddItemModal } from "@/AddItemModal"
+import { Trash } from "lucide-react"
+
+export function DataTable({ columns, user }) {
 
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
-  const [currentStatus, setCurrentStatus] = useState('all');
+  const [rowSelection, setRowSelection] = useState({})
 
-  const handleStatusChange = (status = "") => {
-    if (status === 'all') {
-      table.getColumn('status')?.setFilterValue(undefined);
-      setCurrentStatus('all');
-      return;
+  const [dataVisitors, setDataVisitors] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const isAdmin = user?.role === 'ADMIN'
+
+  const visibleColumns = useMemo(() => {
+    if (isAdmin) {
+      return columns
+    } else {
+      return columns.filter(column => column.id !== 'select' && column.id !== 'actions' && column.id !== 'registered_by')
     }
+  }, [columns, isAdmin])
 
-    const formatStatus = {
-      PENDING: "En proceso",
-      COMPLETED: "Finalizado"
-    }[status]
+  useEffect(() => {
+    fetchVisitors()
+  }, [])
 
-    setCurrentStatus(status);
-    table.getColumn('status')?.setFilterValue(status === 'all' ? '' : status);
-  };
+  const fetchVisitors = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/visitors')
+      if (response.ok) {
+        const visitors = await response.json()
+        setDataVisitors(visitors)
+      } else {
+        console.error('Error fetching visitors:', await response.text())
+      }
+    } catch (error) {
+      console.error('Error fetching visitors:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const navigate = useNavigate();
+  const handleAddItem = async (newItem) => {
+    const itemWithRegisteredBy = {
+      ...newItem
+    }
+    try {
+      const response = await fetch('http://localhost:3001/api/visitors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this line
+        },
+        body: JSON.stringify(itemWithRegisteredBy),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Visitor created:', result)
+        fetchVisitors() // Refresh the data after adding a new visitor
+      } else {
+        console.error('Error creating visitor:', await response.text())
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+    }
+  }
+
+  const deleteVisitors = async (ids) => {
+    try {
+      const response = await fetch('http://localhost:3001/api/visitors', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this line
+        },
+        body: JSON.stringify({ ids }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log(result.message)
+        fetchVisitors() // Refresh the data after deletion
+        setRowSelection({}) // Clear row selection
+      } else {
+        console.error('Error deleting visitors:', await response.text())
+      }
+    } catch (error) {
+      console.error('Error deleting visitors:', error)
+    }
+  }
+
+  const deleteVisitor = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/visitors/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this line
+        },
+      })
+
+      if (response.ok) {
+        console.log(`Visitor with ID ${id} deleted successfully`)
+        fetchVisitors() // Refresh the data after deletion
+      } else {
+        console.error('Error deleting visitor:', await response.text())
+      }
+    } catch (error) {
+      console.error('Error deleting visitor:', error)
+    }
+  }
+
+  const handleDeleteSelected = () => {
+    const selectedIds = Object.keys(rowSelection).map(index => dataVisitors[parseInt(index, 10)].id)
+    if (selectedIds.length > 0) {
+      deleteVisitors(selectedIds)
+    }
+  }
+
 
   const table = useReactTable({
-    data,
-    columns,
+    data: dataVisitors,
+    columns: visibleColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
     state: {
       sorting,
       columnFilters,
+      rowSelection,
+    },
+    meta: {
+      deleteVisitor: (id) => deleteVisitor(id),
     },
   })
 
@@ -69,38 +167,28 @@ export function DataTable({ columns = [], data = [] }) {
         <div className="flex flex-row">
           <Input
             placeholder='Filtrar por...'
-            value={(table.getColumn('nombres')?.getFilterValue()) ?? ''}
+            value={(table.getColumn('firstName')?.getFilterValue()) ?? ''}
             onChange={(event) => {
-              setCurrentStatus('all');
-              table.getColumn('status')?.setFilterValue(undefined);
-              table.getColumn('nombres')?.setFilterValue(event.target.value);
-
+              table.getColumn('firstName')?.setFilterValue(event.target.value);
             }}
             className='max-w-sm bg-white '
           />
-          <Select value={currentStatus} onValueChange={handleStatusChange}>
-            <SelectTrigger className='w-[180px] ml-2 bg-white border-2'>
-              <SelectValue placeholder='Status - All' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Status</SelectLabel>
-                <SelectItem value='all'>Todos</SelectItem>
-                <SelectItem value='PENDING'>En proceso</SelectItem>
-                <SelectItem value='COMPLETED'>Finalizado</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
         </div>
 
-        <div> <Button variant="outline"
-          className="flex flex-row items-center justify-center h-30px p-4 py-6 rounded-full bg-primary-green transition-colors hover:bg-emerald-600/80"
-          onClick={() => navigate("/register-memo")}
-        >
-          <img src={CalendarPlus2} alt="Add register" />
-          <span className="primary-text text-sm ml-2 text-slate-100">Registrar <br />nueva entrada</span>
-        </Button></div>
-
+        <div className="flex space-x-2">
+          {isAdmin && (
+            <Button
+              variant="destructive"
+              className="h-auto rounded-full primary-text font-bold"
+              onClick={handleDeleteSelected}
+              disabled={Object.keys(rowSelection).length === 0}
+            >
+              <Trash className="mr-2" />
+              Borrar seleccionados
+            </Button>
+          )}
+          <AddItemModal onAddItem={handleAddItem} />
+        </div>
       </div>
 
       <div className="rounded-md border-solid border-2 border-gray">
@@ -108,18 +196,16 @@ export function DataTable({ columns = [], data = [] }) {
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} className="text-white">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                    </TableHead>
-                  )
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="text-white">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -139,7 +225,7 @@ export function DataTable({ columns = [], data = [] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={visibleColumns.length} className="h-24 text-center">
                   Sin resultados.
                 </TableCell>
               </TableRow>
@@ -147,10 +233,12 @@ export function DataTable({ columns = [], data = [] }) {
           </TableBody>
         </Table>
         <div className='space-x-2 py-4 px-2 flex justify-between items-center footer-foreground'>
-          <div className='flex-1 text-sm text-white'>
-            {table.getFilteredSelectedRowModel().rows.length} de{' '}
-            {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
-          </div>
+          {isAdmin && (
+            <div className='flex-1 text-sm text-white'>
+              {table.getFilteredSelectedRowModel().rows.length} de{' '}
+              {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
+            </div>
+          )}
 
           <div className='flex items-center justify-end space-x-2'>
             <Button

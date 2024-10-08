@@ -1,0 +1,22 @@
+POST http://localhost:3001/api/auth/register 
+content-type: application/json
+
+{
+    "username": "admin1",
+    "password": "admin",
+    "firstName": "Admin",
+    "lastName": "One",
+    "role": "ADMIN"
+}
+
+###API
+POST http://localhost:3001/api/auth/register 
+content-type: application/json
+
+{
+    "username": "user1",
+    "password": "user",
+    "firstName": "User",
+    "lastName": "One",
+    "role": "USER"
+}

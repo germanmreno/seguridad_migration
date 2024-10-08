@@ -1,11 +1,6 @@
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-
-import { MoreHorizontal } from "lucide-react"
-import { ArrowUp, ArrowDown } from 'lucide-react';
-
-
+import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,150 +9,109 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 
-const myCustomFilterFn = (row, columnId, filterValue) => {
-  const lowerFilterValue = filterValue.toLowerCase();
-  const filterParts = lowerFilterValue.split(' ');
-
-  let rowValues = Object.values(row.original).join(' ').toLowerCase();
-
-  // Include office names in the rowValues
-  if (row.original.offices && Array.isArray(row.original.offices)) {
-    const officeNames = row.original.offices.map(office => office.office.name.toLowerCase()).join(' ');
-    rowValues += ' ' + officeNames;
-  }
-
-  // Replace "en revision" with "pending"
-  const statusReplacements = {
-    "en": "pending",
-    "proceso": "pending",
-    "finalizado": "completed",
-    "EN": "pending",
-    "PROCESO": "pending",
-    "FINALIZADO": "completed"
-  };
-
-  const modifiedFilterParts = filterParts.map(part => {
-    return statusReplacements[part] || part;
-  });
-
-  return modifiedFilterParts.every((part) => rowValues.includes(part));
-};
-
-const SortedIcon = ({ isSorted = "asc" }) => {
-  if (isSorted === 'asc') {
-    return <ArrowUp className='h-4 w-4' />;
-  } else if (isSorted === 'desc') {
-    return <ArrowDown className='h-4 w-4' />;
-  } else {
-    return null;
-  }
-};
-
-export const columns = ({ navigate, toast, setRefresh }) => [
+export const columns = [
   {
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        className="bg-white"
+        checked={table.getIsAllPageRowsSelected()}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Seleccionar todos"
+        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        className="bg-white"
-        aria-label="Seleccionar fila"
+        aria-label="Select row"
       />
     ),
     enableSorting: false,
     enableHiding: false,
   },
   {
-    accessorKey: "nombres",
-    header: "Nombres",
+    accessorKey: "firstName",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Nombres
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
   },
   {
-    accessorKey: "ci",
-    header: "Cédula de identidad",
+    accessorKey: "lastName",
+    header: "Apellidos",
   },
   {
-    accessorKey: "empresa",
+    accessorKey: "dni",
+    header: "Cédula",
+  },
+  {
+    accessorKey: "business",
     header: "Empresa",
   },
   {
-    accessorKey: "telefono",
+    accessorKey: "phone",
     header: "Teléfono",
   },
   {
-    accessorKey: "diaentrada",
-    header: "Fecha de entrada",
+    accessorKey: "gerency",
+    header: "Gerencia",
   },
   {
-    accessorKey: "direccion",
-    header: "Dirección",
-  },
-  {
-    accessorKey: "contacto",
+    accessorKey: "contact",
     header: "Contacto",
   },
   {
-    accessorKey: "observaciones",
-    header: "Observaciones",
+    accessorKey: "date",
+    header: "Fecha",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("date"));
+      return date.toLocaleDateString();
+    },
   },
   {
-    accessorKey: "carnet",
-    header: "Carnet",
+    accessorKey: "hour",
+    header: "Hora",
   },
-  // {
-  //   id: "actions",
-  //   header: "Acciones",
-  //   cell: ({ row }) => {
+  {
+    id: "actions",
+    cell: ({ row, table }) => {
+      const visitor = row.original
 
-  //     const id = row.getValue("id");
-  //     const status = row.getValue("status");
-
-  //     const handleChangeStatus = async () => {
-  //       const newStatus = status === "PENDING" ? "COMPLETED" : "PENDING";
-  //       try {
-  //         await axios.patch(`http://localhost:3000/memos/${id}/status`, { status: newStatus });
-  //         toast.success(`${id}:
-  //           Status actualizado a ${(newStatus === "COMPLETED") ? "Finalizado" : "En proceso"
-  //           } `);
-  //         setRefresh(prev => !prev)
-  //       } catch (error) {
-  //         toast.error('Error cambiando el status. Contacte a Soporte.');
-  //         console.error('Failed to change status:', error);
-  //       }
-  //     };
-
-  //     return (
-  //       <DropdownMenu>
-  //         <DropdownMenuTrigger asChild className="flex justify-center">
-  //           <Button variant="ghost " className="h-8 w-8 p-0">
-  //             <span className="sr-only">Abrir acciones</span>
-  //             <MoreHorizontal className="h-4 w-4" />
-  //           </Button>
-  //         </DropdownMenuTrigger>
-  //         <DropdownMenuContent align="end">
-  //           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-  //           <DropdownMenuSeparator />
-  //           <DropdownMenuItem onClick={() => navigate(`/check-forum/${id.toLocaleLowerCase()}`)}>Abrir foro</DropdownMenuItem>
-  //           <DropdownMenuItem>Cerrar foro</DropdownMenuItem>
-  //           <DropdownMenuItem>Editar foro</DropdownMenuItem>
-  //           <DropdownMenuItem onClick={handleChangeStatus}>Cambiar status</DropdownMenuItem>
-  //           <DropdownMenuItem>Editar registro</DropdownMenuItem>
-  //         </DropdownMenuContent>
-  //       </DropdownMenu>
-  //     )
-  //   },
-  // },
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(visitor.id)}
+            >
+              Copy visitor ID
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem>Edit</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => table.options.meta?.deleteVisitor(visitor.id)}
+              className="text-red-600"
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
 ]
