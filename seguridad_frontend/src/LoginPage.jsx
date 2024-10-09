@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useNavigate } from "react-router-dom";
 
-export const LoginPage = ({ setIsAuthenticated }) => {
+export const LoginPage = ({ setIsAuthenticated, setUser }) => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -12,9 +12,9 @@ export const LoginPage = ({ setIsAuthenticated }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError(''); // Clear any previous errors
     try {
-      // Replace with your actual login API call
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,17 +26,17 @@ export const LoginPage = ({ setIsAuthenticated }) => {
         const data = await response.json();
         console.log('Login successful, received token:', data.token);
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('user', JSON.stringify(data.user));
         setIsAuthenticated(true);
+        setUser(data.user);
         navigate('/dashboard');
       } else {
         const errorData = await response.json();
-        setError(errorData.message || 'Login failed');
-        console.error('Login failed:', errorData);
+        setError(errorData.message || 'Failed to login. Please try again.');
       }
     } catch (error) {
-      setError('An error occurred during login');
       console.error('Login error:', error);
+      setError('An unexpected error occurred. Please try again later.');
     }
   };
 

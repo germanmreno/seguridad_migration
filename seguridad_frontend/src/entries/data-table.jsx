@@ -24,16 +24,19 @@ import { Input } from "@/components/ui/input"
 import { AddItemModal } from "@/AddItemModal"
 import { Trash } from "lucide-react"
 
+import { columns, myCustomFilterFn } from "./columns"
+
 export function DataTable({ columns, user }) {
 
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
   const [rowSelection, setRowSelection] = useState({})
+  const [globalFilter, setGlobalFilter] = useState('')
 
   const [dataVisitors, setDataVisitors] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const isAdmin = user?.role === 'ADMIN'
+  const isAdmin = useMemo(() => user?.role === 'ADMIN', [user])
 
   const visibleColumns = useMemo(() => {
     if (isAdmin) {
@@ -49,7 +52,7 @@ export function DataTable({ columns, user }) {
 
   const fetchVisitors = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/visitors')
+      const response = await fetch('/api/visitors')
       if (response.ok) {
         const visitors = await response.json()
         setDataVisitors(visitors)
@@ -68,7 +71,7 @@ export function DataTable({ columns, user }) {
       ...newItem
     }
     try {
-      const response = await fetch('http://localhost:3001/api/visitors', {
+      const response = await fetch('/api/visitors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +94,7 @@ export function DataTable({ columns, user }) {
 
   const deleteVisitors = async (ids) => {
     try {
-      const response = await fetch('http://localhost:3001/api/visitors', {
+      const response = await fetch('/api/visitors', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +118,7 @@ export function DataTable({ columns, user }) {
 
   const deleteVisitor = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/visitors/${id}`, {
+      const response = await fetch(`/api/visitors/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this line
@@ -140,7 +143,6 @@ export function DataTable({ columns, user }) {
     }
   }
 
-
   const table = useReactTable({
     data: dataVisitors,
     columns: visibleColumns,
@@ -151,10 +153,13 @@ export function DataTable({ columns, user }) {
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
+    globalFilterFn: myCustomFilterFn,
+    onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
       columnFilters,
       rowSelection,
+      globalFilter,
     },
     meta: {
       deleteVisitor: (id) => deleteVisitor(id),
@@ -167,10 +172,8 @@ export function DataTable({ columns, user }) {
         <div className="flex flex-row">
           <Input
             placeholder='Filtrar por...'
-            value={(table.getColumn('firstName')?.getFilterValue()) ?? ''}
-            onChange={(event) => {
-              table.getColumn('firstName')?.setFilterValue(event.target.value);
-            }}
+            value={globalFilter ?? ''}
+            onChange={(event) => setGlobalFilter(event.target.value)}
             className='max-w-sm bg-white '
           />
         </div>

@@ -14,9 +14,20 @@ POST http://localhost:3001/api/auth/register
 content-type: application/json
 
 {
-    "username": "user1",
-    "password": "user",
-    "firstName": "User",
-    "lastName": "One",
+    "username": "ARIANASEGURIDAD",
+    "password": "23658332",
+    "firstName": "Ariana",
+    "lastName": "Campos",
+    "role": "USER"
+}
+
+POST http://localhost:3001/api/auth/register 
+content-type: application/json
+
+{
+    "username": "JONAIDYSSEGURIDAD",
+    "password": "26995987",
+    "firstName": "Jonaidys ",
+    "lastName": "Martinez",
     "role": "USER"
 }
