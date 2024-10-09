@@ -9,7 +9,7 @@ const PrivateRoute = ({ isAuthenticated, setIsAuthenticated }) => {
       if (token) {
         try {
           // Replace this with your actual API call to verify the token
-          const response = await fetch('/api/auth/verify-token', {
+          const response = await fetch('http://172.16.2.51:3001/api/auth/verify-token', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

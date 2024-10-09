@@ -128,7 +128,7 @@ export const columns = [
     },
   },
   {
-    accessorKey: "date",
+    accessorKey: "createdAt",
     header: ({ column }) => {
       return (
         <Button
@@ -141,7 +141,7 @@ export const columns = [
       )
     },
     cell: ({ row }) => {
-      const date = new Date(row.getValue("date"));
+      const date = new Date(row.original.createdAt);
       return date.toLocaleDateString();
     },
   },
@@ -161,6 +161,7 @@ export const columns = [
   },
   {
     id: "registered_by",
+    accessorKey: "registered_by",
     header: ({ column }) => {
       return (
         <Button

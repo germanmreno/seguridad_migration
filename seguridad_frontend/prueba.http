@@ -21,13 +21,26 @@ content-type: application/json
     "role": "USER"
 }
 
+###
 POST http://localhost:3001/api/auth/register 
 content-type: application/json
 
 {
     "username": "JONAIDYSSEGURIDAD",
     "password": "26995987",
-    "firstName": "Jonaidys ",
+    "firstName": "Jonaidys",
     "lastName": "Martinez",
     "role": "USER"
+}
+
+###
+POST http://localhost:3001/api/auth/register 
+content-type: application/json
+
+{
+    "username": "RICHARDSEGURIDAD",
+    "password": "12402574",
+    "firstName": "Richard",
+    "lastName": "Barrera",
+    "role": "ADMIN"
 }
