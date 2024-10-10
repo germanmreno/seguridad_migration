@@ -72,6 +72,7 @@ export function AddItemForm({ onSubmit }) {
   })
 
   const phonePrefix = useWatch({ control: form.control, name: "phonePrefix" })
+  console.log(phonePrefix)
   const phoneNumber = useWatch({ control: form.control, name: "phoneNumber" })
   const date = useWatch({ control: form.control, name: "date" })
 
@@ -108,8 +109,13 @@ export function AddItemForm({ onSubmit }) {
 
     setIsSearching(true)
     try {
-      const response = await fetch(`/api/search-visitor?dni=${searchDni}`)
+      const response = await fetch(`http://172.16.2.51:3001/api/visitors/search-visitor?dni=${searchDni}`)
       const data = await response.json()
+      const phonePrefix = data.visitor.phone.slice(0, 6)
+      const phoneNumber = data.visitor.phone.slice(6)
+
+      // Find the matching option in phoneOptions
+      const matchingPrefix = phoneOptions.find(option => option.id === phonePrefix)
 
       if (data.visitor) {
         form.reset({
@@ -118,26 +124,16 @@ export function AddItemForm({ onSubmit }) {
           lastName: data.visitor.lastName,
           dni: data.visitor.dni,
           business: data.visitor.business,
-          phonePrefix: data.visitor.phonePrefix,
-          phoneNumber: data.visitor.phoneNumber,
+          phonePrefix: matchingPrefix ? matchingPrefix.id : "",
+          phoneNumber: phoneNumber,
         })
-        toast({
-          title: "Visitante encontrado",
-          description: "Los campos han sido pre-llenados con la información existente.",
-        })
+        toast(`Visitante encontrado: ${data.visitor.firstName} ${data.visitor.lastName}`)
       } else {
-        toast({
-          title: "Visitante no encontrado",
-          description: "No se encontró ningún visitante con ese DNI.",
-        })
+        toast("No se encontró ningún visitante con ese DNI.")
       }
     } catch (error) {
       console.error("Error searching for visitor:", error)
-      toast({
-        title: "Error",
-        description: "Hubo un problema al buscar el visitante. Por favor, intente de nuevo.",
-        variant: "destructive",
-      })
+      toast("Hubo un problema al buscar el visitante. Por favor, intente de nuevo.")
     } finally {
       setIsSearching(false)
     }
@@ -222,7 +218,11 @@ export function AddItemForm({ onSubmit }) {
               render={({ field }) => (
                 <FormItem className="col-span-1">
                   <FormLabel className="font-bold primary-text">Prefijo  <span className="text-red-500">*</span></FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="(+58)" />

@@ -14,7 +14,7 @@ export const LoginPage = ({ setIsAuthenticated, setUser }) => {
     e.preventDefault();
     setError(''); // Clear any previous errors
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://172.16.2.51:3001/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
