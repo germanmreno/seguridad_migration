@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { gerencyOptions, phoneOptions } from "./options/formOptions"
 import { Textarea } from "./components/ui/textarea"
+import { toast } from 'sonner';
+import { useState } from "react"
 
 const formSchema = z.object({
   firstName: z.string({ required_error: "Campo obligatorio" }).min(2, {
@@ -50,6 +52,9 @@ const formSchema = z.object({
 })
 
 export function AddItemForm({ onSubmit }) {
+  const [isSearching, setIsSearching] = useState(false)
+
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -89,8 +94,72 @@ export function AddItemForm({ onSubmit }) {
     onSubmit(visitorData)
   }
 
+  const handleDniSearch = async (e) => {
+    e.preventDefault()
+    const searchDni = e.target.searchDni.value
+    if (!searchDni) {
+      toast({
+        title: "Error",
+        description: "Por favor, ingrese un DNI para buscar.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(`/api/search-visitor?dni=${searchDni}`)
+      const data = await response.json()
+
+      if (data.visitor) {
+        form.reset({
+          ...form.getValues(),
+          firstName: data.visitor.firstName,
+          lastName: data.visitor.lastName,
+          dni: data.visitor.dni,
+          business: data.visitor.business,
+          phonePrefix: data.visitor.phonePrefix,
+          phoneNumber: data.visitor.phoneNumber,
+        })
+        toast({
+          title: "Visitante encontrado",
+          description: "Los campos han sido pre-llenados con la información existente.",
+        })
+      } else {
+        toast({
+          title: "Visitante no encontrado",
+          description: "No se encontró ningún visitante con ese DNI.",
+        })
+      }
+    } catch (error) {
+      console.error("Error searching for visitor:", error)
+      toast({
+        title: "Error",
+        description: "Hubo un problema al buscar el visitante. Por favor, intente de nuevo.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   return (
+
     <Form {...form}>
+
+      <form onSubmit={handleDniSearch} className="mb-4">
+        <div className="flex space-x-2">
+          <Input
+            name="searchDni"
+            placeholder="Buscar por C.I. (Ej.: V-12345678)"
+            className="flex-grow"
+          />
+          <Button type="submit" disabled={isSearching}>
+            {isSearching ? "Buscando..." : "Buscar"}
+          </Button>
+        </div>
+      </form>
+
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
         <div className="grid grid-cols-3 space-x-2">
           <FormField
