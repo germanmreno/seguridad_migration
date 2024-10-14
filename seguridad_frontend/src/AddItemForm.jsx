@@ -79,7 +79,6 @@ export function AddItemForm({ onSubmit }) {
   const handleSubmit = (data) => {
     // Combine phonePrefix and phoneNumber
     const fullPhoneNumber = `${data.phonePrefix}${data.phoneNumber}`
-    const formattedDate = format(data.date, 'dd/MM/yyyy')
     const formattedHour = format(data.date, 'HH:mm')
     const user = JSON.parse(localStorage.getItem('user'))
     const registeredBy = `${user.firstName} ${user.lastName}`
@@ -87,7 +86,6 @@ export function AddItemForm({ onSubmit }) {
     const visitorData = {
       ...data,
       phone: fullPhoneNumber,
-      date: formattedDate,
       hour: formattedHour,
       registered_by: registeredBy
     }

@@ -25,6 +25,7 @@ import { AddItemModal } from "@/AddItemModal"
 import { Trash } from "lucide-react"
 
 import { columns, myCustomFilterFn } from "./columns"
+import { toast } from "sonner"
 
 export function DataTable({ columns, user }) {
 
@@ -84,12 +85,15 @@ export function DataTable({ columns, user }) {
       if (response.ok) {
         const result = await response.json()
         console.log('Visitor created:', result)
+        toast.success('Registro creado correctamente')
         fetchVisitors() // Refresh the data after adding a new visitor
       } else {
         console.error('Error creating visitor:', await response.text())
+        toast.error('Error creando registro')
       }
     } catch (error) {
       console.error('Error submitting form:', error)
+      toast.error('Error creando registro')
     }
   }
 
