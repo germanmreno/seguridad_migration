@@ -36,7 +36,7 @@ export function AddItemModal({ onAddItem }) {
         <DialogHeader>
           <DialogTitle>Añadir nuevo registro</DialogTitle>
           <DialogDescription>
-            Rellene los campos del nuevo registro. Recuerde que los campos con <span className="text-red-500">*</span> son obligatorios.
+            Siga los pasos para registrar una nueva entrada.
           </DialogDescription>
         </DialogHeader>
         <AddItemForm onSubmit={handleSubmit} />

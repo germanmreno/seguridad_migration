@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { AddItemModal } from "@/AddItemModal"
 import { Trash } from "lucide-react"
 
-import { columns, myCustomFilterFn } from "./columns"
+import { myCustomFilterFn } from "./columns"
 import { toast } from "sonner"
 
 export function DataTable({ columns, user }) {
@@ -53,7 +53,7 @@ export function DataTable({ columns, user }) {
 
   const fetchVisitors = async () => {
     try {
-      const response = await fetch('http://172.16.2.51:3001/api/visitors')
+      const response = await fetch('http://localhost:3001/api/visitors')
       if (response.ok) {
         const visitors = await response.json()
         setDataVisitors(visitors)
@@ -73,7 +73,7 @@ export function DataTable({ columns, user }) {
       ...newItem
     }
     try {
-      const response = await fetch('http://172.16.2.51:3001/api/visitors', {
+      const response = await fetch('http://localhost:3001/api/visitors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export function DataTable({ columns, user }) {
 
   const deleteVisitors = async (ids) => {
     try {
-      const response = await fetch('http://172.16.2.51:3001/api/visitors', {
+      const response = await fetch('http://localhost:3001/api/visitors', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export function DataTable({ columns, user }) {
 
   const deleteVisitor = async (id) => {
     try {
-      const response = await fetch(`http://172.16.2.51:3001/api/visitors/${id}`, {
+      const response = await fetch(`http://localhost:3001/api/visitors/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this line
