@@ -8,8 +8,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { AddItemForm } from "./AddItemForm"
+
 import CalendarPlus2 from './assets/calendar-plus.svg'
+import { AddItemForm } from "./components/form/AddItemForm"
 
 export function AddItemModal({ onAddItem }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -38,6 +39,7 @@ export function AddItemModal({ onAddItem }) {
           <DialogDescription>
             Siga los pasos para registrar una nueva entrada.
           </DialogDescription>
+          <hr className="my-4 border-gray-200" />
         </DialogHeader>
         <AddItemForm onSubmit={handleSubmit} />
       </DialogContent>

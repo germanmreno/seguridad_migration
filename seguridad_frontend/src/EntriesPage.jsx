@@ -1,5 +1,5 @@
-import { DataTable } from './entries/data-table'
-import { columns } from './entries/columns'
+import { DataTable } from './visits/data-table'
+import { columns } from './visits/columns'
 import { Layout } from './layout'
 
 export const EntriesPage = ({ user }) => {
