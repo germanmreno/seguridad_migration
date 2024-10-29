@@ -1,7 +1,10 @@
-import { useForm, useWatch } from "react-hook-form"
+import { useEffect, useState, useMemo, memo } from "react"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format } from "date-fns"
+import axios from "axios"
+
 import {
   Form,
   FormControl,
@@ -14,11 +17,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { gerencyOptions, phoneOptions } from "./options/formOptions"
-import { Car, PersonStanding } from 'lucide-react';
+import { phoneOptions } from "./options/formOptions"
+import { Car, PersonStanding, Loader2, Search } from 'lucide-react';
 import { Textarea } from "./components/ui/textarea"
 import { toast } from 'sonner';
-import { useState } from "react"
 
 const formSchema = z.object({
   formType: z.string().optional(), // Add formType to the schema
@@ -41,14 +43,12 @@ const formSchema = z.object({
     message: "El número debe tener al menos 7 dígitos",
   }),
   gerency: z.string({ required_error: "Campo obligatorio" }).min(2, {
-    message: "La gerencia debe tener al menos 2 caracteres.",
+    message: "El ente debe tener al menos 2 caracteres.",
   }),
   contact: z.string({ required_error: "Campo obligatorio" }).min(2, {
     message: "El contacto debe tener al menos 2 caracteres.",
   }),
-  observation: z.string({ required_error: "Campo obligatorio" }).min(2, {
-    message: "La observación debe tener al menos 2 caracteres.",
-  }),
+  observation: z.string().optional(),
   // Add optional vehicle fields that are required only when formType is 'visitor'
   vehiclePlate: z.string().min(6, {
     message: "La placa del vehículo debe cumplir con el formato ABC123.",
@@ -97,9 +97,181 @@ const formSchema = z.object({
     }
   }),
   date: z.date({ required_error: "Campo obligatorio" }),
+  entityId: z.number().min(1, "Entidad es requerida"),
+  administrativeUnitId: z.number().min(1, "Unidad Administrativa es requerida"),
+  directionId: z.number().optional(),
+  areaId: z.number().optional(),
 })
 
-// Add new component for form type selection
+// Memoized Entity Select Component
+const EntitySelect = memo(({ field, loading, entities, onValueChange }) => (
+  <FormItem>
+    <FormLabel className="font-bold primary-text">Entidad <span className="text-red-500">*</span></FormLabel>
+    <Select
+      onValueChange={onValueChange}
+      value={field.value?.toString() || ""}
+      disabled={loading}
+    >
+      <FormControl>
+        <SelectTrigger className="w-full">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Cargando entidades...</span>
+            </div>
+          ) : (
+            <SelectValue placeholder="Seleccione una entidad" />
+          )}
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent>
+        {entities.length > 0 ? (
+          entities.map((entity) => (
+            <SelectItem key={entity.id} value={entity.id.toString()}>
+              {entity.name}
+            </SelectItem>
+          ))
+        ) : (
+          <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+            No se han encontrado entidades
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+    <FormDescription>
+      Ingrese la entidad de la visita.
+    </FormDescription>
+    <FormMessage />
+  </FormItem>
+));
+
+// Memoized Administrative Unit Select Component
+const AdminUnitSelect = memo(({ field, loading, adminUnits, disabled, onValueChange }) => (
+  <FormItem>
+    <FormLabel className="font-bold primary-text">Unidad Administrativa <span className="text-red-500">*</span></FormLabel>
+    <Select
+      disabled={disabled || loading}
+      onValueChange={onValueChange}
+      value={field.value?.toString() || ""}
+    >
+      <FormControl>
+        <SelectTrigger className="w-full">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Cargando unidades...</span>
+            </div>
+          ) : (
+            <SelectValue placeholder="Seleccione una unidad administrativa" />
+          )}
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent>
+        {adminUnits.length > 0 ? (
+          adminUnits.map((unit) => (
+            <SelectItem key={unit.id} value={unit.id.toString()}>
+              {unit.name}
+            </SelectItem>
+          ))
+        ) : (
+          <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+            No se han encontrado unidades administrativas
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+    <FormDescription>
+      Ingrese la unidad administrativa de la visita.
+    </FormDescription>
+    <FormMessage />
+  </FormItem>
+));
+
+// Memoized Direction Select Component
+const DirectionSelect = memo(({ field, loading, directions, disabled, onValueChange }) => (
+  <FormItem>
+    <FormLabel className="font-bold primary-text">Dirección</FormLabel>
+    <Select
+      disabled={disabled || loading}
+      onValueChange={onValueChange}
+      value={field.value?.toString() || ""}
+    >
+      <FormControl>
+        <SelectTrigger className="w-full">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Cargando direcciones...</span>
+            </div>
+          ) : (
+            <SelectValue placeholder="Seleccione una dirección" />
+          )}
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent>
+        {directions.length > 0 ? (
+          directions.map((direction) => (
+            <SelectItem key={direction.id} value={direction.id.toString()}>
+              {direction.name}
+            </SelectItem>
+          ))
+        ) : (
+          <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+            No se han encontrado direcciones
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+    <FormDescription>
+      Ingrese la dirección de la visita.
+    </FormDescription>
+    <FormMessage />
+  </FormItem>
+));
+
+// Memoized Area Select Component
+const AreaSelect = memo(({ field, loading, areas, disabled, onValueChange }) => (
+  <FormItem>
+    <FormLabel className="font-bold primary-text">Área</FormLabel>
+    <Select
+      disabled={disabled || loading}
+      onValueChange={onValueChange}
+      value={field.value?.toString() || ""}
+    >
+      <FormControl>
+        <SelectTrigger className="w-full">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Cargando áreas...</span>
+            </div>
+          ) : (
+            <SelectValue placeholder="Seleccione un área" />
+          )}
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent>
+        {areas.length > 0 ? (
+          areas.map((area) => (
+            <SelectItem key={area.id} value={area.id.toString()}>
+              {area.name}
+            </SelectItem>
+          ))
+        ) : (
+          <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+            No se han encontrado áreas
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+    <FormDescription>
+      Ingrese la área de la visita.
+    </FormDescription>
+    <FormMessage />
+  </FormItem>
+));
+
+// Define all step components inside the main component
 const FormTypeStep = ({ onSelectType }) => {
   return (
     <div className="space-y-4">
@@ -134,12 +306,716 @@ const FormTypeStep = ({ onSelectType }) => {
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-// Add new component for form summary
+const VisitorTypeStep = ({ onSelectType, onBack }) => {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold primary-text">Tipo de Visitante</h2>
+      <span className="text-sm text-muted-foreground">Seleccione si es un visitante nuevo o existente.</span>
+      <div className="grid grid-cols-2 gap-4">
+        <Button
+          onClick={() => onSelectType('new')}
+          variant="outline"
+          className="h-32"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center justify-center">
+              <PersonStanding className="w-10 h-10" />
+            </div>
+            <h3 className="font-bold">Nuevo Visitante</h3>
+            <p className="text-sm text-muted-foreground">Registrar un nuevo visitante</p>
+          </div>
+        </Button>
+        <Button
+          onClick={() => onSelectType('existing')}
+          variant="outline"
+          className="h-32"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center justify-center">
+              <Search className="w-10 h-10" />
+            </div>
+            <h3 className="font-bold">Visitante Existente</h3>
+            <p className="text-sm text-muted-foreground">Buscar un visitante registrado</p>
+          </div>
+        </Button>
+      </div>
+      <div className="flex justify-between">
+        <Button onClick={onBack} variant="outline">Atrás</Button>
+      </div>
+    </div>
+  );
+};
+
+const ExistingVisitorStep = ({ onNext, onBack }) => {
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const searchDni = e.target.searchDni.value;
+    if (!searchDni) {
+      toast.error("Por favor, ingrese un DNI para buscar.");
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.get(`http://localhost:3001/api/visitors/search-visitor?dni=${searchDni}`);
+      if (response.data.visitor) {
+        onNext(response.data.visitor);
+        toast.success(`Visitante encontrado: ${response.data.visitor.firstName} ${response.data.visitor.lastName}`);
+      } else {
+        toast.error("No se encontró ningún visitante con ese DNI.");
+      }
+    } catch (error) {
+      console.error("Error searching for visitor:", error);
+      toast.error("Hubo un problema al buscar el visitante. Por favor, intente de nuevo.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold primary-text">Buscar Visitante Existente</h2>
+      <span className="text-sm text-muted-foreground">Ingrese el DNI del visitante para buscar sus datos.</span>
+
+      <form onSubmit={handleSearch} className="space-y-4">
+        <div className="flex gap-2">
+          <Input
+            name="searchDni"
+            placeholder="Ingrese el DNI (Ej: V-12345678)"
+            className="flex-1"
+          />
+          <Button type="submit" disabled={isSearching}>
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Buscar"
+            )}
+          </Button>
+        </div>
+      </form>
+
+      <div className="flex justify-between mt-8">
+        <Button onClick={onBack} variant="outline">
+          Atrás
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const VisitorPersonalInfoStep = ({ form, onNext, onBack, formType }) => {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold primary-text">Información Personal</h2>
+      <span className="text-sm text-muted-foreground">
+        Ingrese los datos personales del visitante. Los campos con <span className="text-red-500">*</span> son obligatorios.
+      </span>
+
+      <div className="grid grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="firstName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">Nombres <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Nombres de la persona" {...field} />
+              </FormControl>
+              <FormDescription>
+                Ingrese el nombre del visitante.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">Apellidos <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Apellidos de la persona" {...field} />
+              </FormControl>
+              <FormDescription>
+                Ingrese los apellidos del visitante.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="dni"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">Cédula <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Ej.: V-12345678" {...field} />
+              </FormControl>
+              <FormDescription>
+                Ingrese la cédula del visitante (V-xxxxxxx o E-xxxxxxx).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="flex space-x-4">
+        <FormField
+          control={form.control}
+          name="phonePrefix"
+          render={({ field }) => (
+            <FormItem className="w-1/3">
+              <FormLabel className="font-bold primary-text">Prefijo <span className="text-red-500">*</span></FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="(+58)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {phoneOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Prefijo telefónico.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phoneNumber"
+          render={({ field }) => (
+            <FormItem className="flex-1">
+              <FormLabel className="font-bold primary-text">Número de teléfono <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Ej.: 1234567" {...field} />
+              </FormControl>
+              <FormDescription>
+                Escriba el número de teléfono del visitante.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {formType === 'vehicle' && (
+        <>
+          <h2 className="text-xl font-bold primary-text mt-8">Información del Vehículo</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="vehiclePlate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold primary-text">Placa del vehículo <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej.: ABC123" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Ingrese la placa del vehículo del visitante.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="vehicleBrand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold primary-text">Marca del vehículo <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej.: Toyota" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Ingrese la marca del vehículo del visitante.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="vehicleModel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold primary-text">Modelo del vehículo <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej.: Corolla" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Ingrese el modelo del vehículo del visitante.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="vehicleColor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold primary-text">Color del vehículo <span className="text-red-500">*</span></FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej.: Azul" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Ingrese el color del vehículo del visitante.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </>
+      )}
+
+      <div className="flex justify-between mt-6">
+        <Button type="button" onClick={onBack} variant="outline">
+          Atrás
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            const fieldsToValidate = [
+              'firstName',
+              'lastName',
+              'dni',
+              'phonePrefix',
+              'phoneNumber'
+            ];
+
+            if (formType === 'vehicle') {
+              fieldsToValidate.push(
+                'vehiclePlate',
+                'vehicleBrand',
+                'vehicleModel',
+                'vehicleColor'
+              );
+            }
+
+            form.trigger(fieldsToValidate).then(isValid => {
+              if (isValid) onNext();
+            });
+          }}
+        >
+          Siguiente
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const EnterpriseInfoStep = ({ form, onNext, onBack }) => {
+  return (
+    <form onSubmit={form.handleSubmit(onNext)} className="space-y-4">
+      <h2 className="text-xl font-bold primary-text">Información Empresarial</h2>
+      <span className="text-sm text-muted-foreground">
+        Ingrese los datos empresariales del visitante. Los campos con <span className="text-red-500">*</span> son obligatorios.
+      </span>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="business"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">Empresa <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Empresa a la que representa el visitante" {...field} />
+              </FormControl>
+              <FormDescription>
+                Ingrese el nombre de la empresa a la que representa el visitante.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="business"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">RIF de la Empresa <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="RIF de la empresa a la que representa el visitante (G-xxxxxxx o J-xxxxxxx)" {...field} />
+              </FormControl>
+              <FormDescription>
+                Ingrese el RIF de la empresa a la que representa el visitante (G-xxxxxxx o J-xxxxxxx).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+
+      <div className="flex justify-between mt-6">
+        <Button type="button" onClick={onBack} variant="outline">
+          Atrás
+        </Button>
+        <Button onClick={() => {
+          const fieldsToValidate = [
+            'business',
+          ];
+
+          form.trigger(fieldsToValidate).then(isValid => {
+            if (isValid) onNext();
+          });
+        }}>
+          Siguiente
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+const VisitInfoStep = ({ form, onNext, onBack, entities, adminUnits, directions, areas, loading }) => {
+  // Helper functions to get names from IDs
+  const getEntityName = (id) => {
+    const entity = entities.find(e => e.id.toString() === id?.toString());
+    return entity?.name || "";
+  };
+
+  const getAdminUnitName = (id) => {
+    const unit = adminUnits.find(u => u.id.toString() === id?.toString());
+    return unit?.name || "";
+  };
+
+  const getDirectionName = (id) => {
+    const direction = directions.find(d => d.id.toString() === id?.toString());
+    return direction?.name || "";
+  };
+
+  const getAreaName = (id) => {
+    const area = areas.find(a => a.id.toString() === id?.toString());
+    return area?.name || "";
+  };
+
+  // Calculate column class based on number of visible selects
+  const getColSpanClass = () => {
+    const visibleSelectsCount = 2 + (directions.length > 0 ? 1 : 0) + (areas.length > 0 ? 1 : 0);
+    switch (visibleSelectsCount) {
+      case 2: return 'col-span-2';
+      case 3: return 'col-span-1';
+      case 4: return 'col-span-1';
+      default: return 'col-span-2';
+    }
+  };
+
+  const colSpanClass = getColSpanClass();
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold primary-text">Información de la Visita</h2>
+      <span className="text-sm text-muted-foreground">
+        Ingrese los datos de la visita. Los campos con <span className="text-red-500">*</span> son obligatorios.
+      </span>
+
+      <div className="grid grid-cols-4 gap-4">
+        <FormField
+          control={form.control}
+          name="entityId"
+          render={({ field }) => (
+            <FormItem className={colSpanClass}>
+              <FormLabel className="font-bold primary-text">Gerencia <span className="text-red-500">*</span></FormLabel>
+              <Select
+                disabled={loading}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  form.setValue('administrativeUnitId', '');
+                  form.setValue('directionId', '');
+                  form.setValue('areaId', '');
+                }}
+                value={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Cargando entes...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder="Seleccione un ente">
+                        {getEntityName(field.value)}
+                      </SelectValue>
+                    )}
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {entities.length > 0 ? (
+                    entities.map((entity) => (
+                      <SelectItem key={entity.id} value={entity.id.toString()}>
+                        {entity.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                      No se han encontrado gerencias
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Seleccione la gerencia a visitar.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="administrativeUnitId"
+          render={({ field }) => (
+            <FormItem className={colSpanClass}>
+              <FormLabel className="font-bold primary-text">Unidad Administrativa <span className="text-red-500">*</span></FormLabel>
+              <Select
+                disabled={!form.watch('entityId') || loading}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  form.setValue('directionId', '');
+                  form.setValue('areaId', '');
+                }}
+                value={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Cargando unidades...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder="Seleccione una unidad administrativa">
+                        {getAdminUnitName(field.value)}
+                      </SelectValue>
+                    )}
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {adminUnits.length > 0 ? (
+                    adminUnits.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id.toString()}>
+                        {unit.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                      {form.watch('entityId')
+                        ? "No se han encontrado unidades administrativas"
+                        : "Seleccione una gerencia primero"}
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Seleccione la unidad administrativa a visitar.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {directions.length > 0 && (
+          <FormField
+            control={form.control}
+            name="directionId"
+            render={({ field }) => (
+              <FormItem className={colSpanClass}>
+                <FormLabel className="font-bold primary-text">Dirección</FormLabel>
+                <Select
+                  disabled={!form.watch('administrativeUnitId') || loading}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    form.setValue('areaId', '');
+                  }}
+                  value={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      {loading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Cargando direcciones...</span>
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Seleccione una dirección">
+                          {getDirectionName(field.value)}
+                        </SelectValue>
+                      )}
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {directions.length > 0 ? (
+                      directions.map((direction) => (
+                        <SelectItem key={direction.id} value={direction.id.toString()}>
+                          {direction.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                        {form.watch('administrativeUnitId')
+                          ? "No se han encontrado direcciones"
+                          : "Seleccione una unidad administrativa primero"}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Seleccione la dirección a visitar (opcional).
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {areas.length > 0 && (
+          <FormField
+            control={form.control}
+            name="areaId"
+            render={({ field }) => (
+              <FormItem className={colSpanClass}>
+                <FormLabel className="font-bold primary-text">Área</FormLabel>
+                <Select
+                  disabled={!form.watch('administrativeUnitId') || loading}
+                  onValueChange={field.onChange}
+                  value={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      {loading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Cargando áreas...</span>
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Seleccione un área">
+                          {getAreaName(field.value)}
+                        </SelectValue>
+                      )}
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {areas.length > 0 ? (
+                      areas.map((area) => (
+                        <SelectItem key={area.id} value={area.id.toString()}>
+                          {area.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                        {form.watch('administrativeUnitId')
+                          ? "No se han encontrado áreas"
+                          : "Seleccione una unidad administrativa primero"}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Seleccione el área a visitar (opcional).
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+      </div>
+
+      {/* Other fields below the grid */}
+      <div className="space-y-4">
+        <FormField
+          control={form.control}
+          name="contact"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">Persona a visitar <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Nombre de la persona a visitar" {...field} />
+              </FormControl>
+              <FormDescription>
+                Ingrese el nombre de la persona que será visitada.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="observation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-bold primary-text">Observación</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Observaciones adicionales de la visita"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Ingrese cualquier observación adicional sobre la visita.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="flex justify-between mt-6">
+        <Button type="button" onClick={onBack} variant="outline">
+          Atrás
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            form.trigger([
+              'entityId',
+              'administrativeUnitId',
+              'contact',
+              'observation'
+            ]).then(isValid => {
+              if (isValid) onNext();
+            });
+          }}
+        >
+          Siguiente
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
-  console.log(formData)
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold primary-text">Resumen del registro</h2>
@@ -222,22 +1098,35 @@ const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
 
       </div>
       <div className="flex justify-between">
-        <Button onClick={onBack} variant="outline">Atrás</Button>
-        <Button onClick={onConfirm}>Confirmar Registro</Button>
+        <Button type="button" onClick={onBack} variant="outline">
+          Atrás
+        </Button>
+        <Button
+          onClick={onConfirm}
+        >
+          Confirmar Registro
+        </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export function AddItemForm({ onSubmit }) {
-  const [step, setStep] = useState(1)
-  const [formType, setFormType] = useState(null)
-  const [isSearching, setIsSearching] = useState(false)
+  const [step, setStep] = useState(1);
+  const [formType, setFormType] = useState(null);
+  const [visitorType, setVisitorType] = useState(null);
+
+  // Add state for form selections
+  const [entities, setEntities] = useState([]);
+  const [adminUnits, setAdminUnits] = useState([]);
+  const [directions, setDirections] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      formType: "", // Asegúrate de que formType esté en los valores por defecto
+      formType: "",
       firstName: "",
       lastName: "",
       dni: "",
@@ -245,7 +1134,10 @@ export function AddItemForm({ onSubmit }) {
       business: "",
       phonePrefix: "",
       phoneNumber: "",
-      gerency: "",
+      entityId: "",
+      administrativeUnitId: "",
+      directionId: "",
+      areaId: "",
       contact: "",
       observation: "",
       vehiclePlate: "",
@@ -253,400 +1145,253 @@ export function AddItemForm({ onSubmit }) {
       vehicleBrand: "",
       vehicleColor: "",
     },
-  })
+  });
 
-  const phonePrefix = useWatch({ control: form.control, name: "phonePrefix" })
-  console.log(phonePrefix)
-  const phoneNumber = useWatch({ control: form.control, name: "phoneNumber" })
-  const date = useWatch({ control: form.control, name: "date" })
+  const { watch } = form;
+  const entityId = watch("entityId");
+  const adminUnitId = watch("administrativeUnitId");
+  const directionId = watch("directionId");
+
+  // Add useEffect hooks for fetching data
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        const response = await axios.get("http://localhost:3001/api/selects/entities");
+        setEntities(response.data);
+      } catch (error) {
+        console.error("Error fetching entities:", error);
+      }
+    };
+    fetchEntities();
+  }, []);
+
+  useEffect(() => {
+    const fetchAdminUnits = async () => {
+      if (!entityId) {
+        setAdminUnits([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `http://localhost:3001/api/selects/administrative-units/${entityId}`
+        );
+        setAdminUnits(response.data);
+      } catch (error) {
+        console.error("Error fetching administrative units:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAdminUnits();
+  }, [entityId]);
+
+  useEffect(() => {
+    const fetchDirections = async () => {
+      if (!adminUnitId) {
+        setDirections([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `http://localhost:3001/api/selects/directions/${adminUnitId}`
+        );
+        setDirections(response.data);
+      } catch (error) {
+        console.error("Error fetching directions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDirections();
+  }, [adminUnitId]);
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      if (!adminUnitId && !directionId) {
+        setAreas([]);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        let response;
+        if (directionId) {
+          response = await axios.get(
+            `http://localhost:3001/api/selects/areas/${directionId}?type=direction`
+          );
+        } else {
+          response = await axios.get(
+            `http://localhost:3001/api/selects/areas/${adminUnitId}?type=unit`
+          );
+        }
+        setAreas(response.data);
+      } catch (error) {
+        console.error("Error fetching areas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAreas();
+  }, [adminUnitId, directionId]);
+
+  // Add handlers for select changes
+  const handleEntityChange = useMemo(() =>
+    (value) => {
+      const numericValue = parseInt(value, 10);
+      if (numericValue !== form.getValues().entityId) {
+        form.setValue('entityId', numericValue);
+        form.setValue('administrativeUnitId', '');
+        form.setValue('directionId', '');
+        form.setValue('areaId', '');
+      }
+    },
+    [form]
+  );
+
+  const handleAdminUnitChange = useMemo(() =>
+    (value) => {
+      const numericValue = parseInt(value, 10);
+      if (numericValue !== form.getValues().administrativeUnitId) {
+        form.setValue('administrativeUnitId', numericValue);
+        form.setValue('directionId', '');
+        form.setValue('areaId', '');
+      }
+    },
+    [form]
+  );
+
+  const handleDirectionChange = useMemo(() =>
+    (value) => {
+      const numericValue = parseInt(value, 10);
+      if (numericValue !== form.getValues().directionId) {
+        form.setValue('directionId', numericValue);
+        form.setValue('areaId', '');
+      }
+    },
+    [form]
+  );
+
+  const handleAreaChange = useMemo(() =>
+    (value) => {
+      const numericValue = parseInt(value, 10);
+      if (numericValue !== form.getValues().areaId) {
+        form.setValue('areaId', numericValue);
+      }
+    },
+    [form]
+  );
 
   const handleFormTypeSelect = (type) => {
-    setFormType(type)
-    form.setValue('formType', type) // Asegúrate de que formType se establezca en el formulario
-    setStep(2)
-  }
+    setFormType(type);
+    form.setValue('formType', type);
+    setStep(2);
+  };
 
-  const handleNext = (data) => {
-    setStep(3)
-  }
-
-  const handleBack = () => {
-    setStep(step - 1)
-  }
-
-  const handleFinalSubmit = (data) => {
-    // Combine phonePrefix and phoneNumber
-    const fullPhoneNumber = `${data.phonePrefix}${data.phoneNumber}`
-    const formattedHour = format(data.date, 'HH:mm')
-    const user = JSON.parse(localStorage.getItem('user'))
-    const registeredBy = `${user.firstName} ${user.lastName}`
-
-    const visitorData = {
-      ...data,
-      phone: fullPhoneNumber,
-      hour: formattedHour,
-      registered_by: registeredBy
+  const handleVisitorTypeSelect = (type) => {
+    setVisitorType(type);
+    if (type === 'new') {
+      setStep(3);
+    } else {
+      setStep(2.5);
     }
+  };
 
-    onSubmit(visitorData)
-  }
+  const handleExistingVisitorFound = (visitorData) => {
+    // ... handle existing visitor data ...
+    setStep(3);
+  };
 
-  const handleDniSearch = async (e) => {
-    e.preventDefault()
-    const searchDni = e.target.searchDni.value
-    if (!searchDni) {
-      toast({
-        title: "Error",
-        description: "Por favor, ingrese un DNI para buscar.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSearching(true)
+  const handleFinalSubmit = async (data) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/visitors/search-visitor?dni=${searchDni}`)
-      const data = await response.json()
-      const phonePrefix = data.visitor.phone.slice(0, 6)
-      const phoneNumber = data.visitor.phone.slice(6)
+      // First API call - Create/Update Visitor
+      const visitorResponse = await axios.post('/api/visitors', {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dni: data.dni,
+        phonePrefix: data.phonePrefix,
+        phoneNumber: data.phoneNumber,
+        ...(formType === 'vehicle' && {
+          vehiclePlate: data.vehiclePlate,
+          vehicleBrand: data.vehicleBrand,
+          vehicleModel: data.vehicleModel,
+          vehicleColor: data.vehicleColor,
+        }),
+      });
 
-      // Find the matching option in phoneOptions
-      const matchingPrefix = phoneOptions.find(option => option.id === phonePrefix)
+      // Second API call - Create Visit using visitor ID from first response
+      await axios.post('/api/visits', {
+        visitorId: visitorResponse.data.id,
+        entityId: data.entityId,
+        administrativeUnitId: data.administrativeUnitId,
+        directionId: data.directionId,
+        areaId: data.areaId,
+        contact: data.contact,
+        observation: data.observation,
+      });
 
-      if (data.visitor) {
-        form.reset({
-          ...form.getValues(),
-          firstName: data.visitor.firstName,
-          lastName: data.visitor.lastName,
-          dni: data.visitor.dni,
-          business: data.visitor.business,
-          phonePrefix: matchingPrefix ? matchingPrefix.id : "",
-          phoneNumber: phoneNumber,
-        })
-        toast(`Visitante encontrado: ${data.visitor.firstName} ${data.visitor.lastName}`)
-      } else {
-        toast("No se encontró ningún visitante con ese DNI.")
-      }
+      toast.success("Registro completado exitosamente");
+      // Handle successful submission (reset form, redirect, etc.)
     } catch (error) {
-      console.error("Error searching for visitor:", error)
-      toast("Hubo un problema al buscar el visitante. Por favor, intente de nuevo.")
-    } finally {
-      setIsSearching(false)
+      console.error('Error submitting form:', error);
+      toast.error("Error al procesar el registro");
     }
-  }
+  };
 
-  // Render different steps
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <FormTypeStep onSelectType={handleFormTypeSelect} />
+        return <FormTypeStep onSelectType={handleFormTypeSelect} />;
       case 2:
-        return (
-          <form onSubmit={form.handleSubmit(handleNext)} className="space-y-2">
-            <h2 className="text-xl font-bold primary-text">Relleno de datos</h2>
-            <span className="text-sm text-muted-foreground">Rellene los campos del nuevo registro. Recuerde que los campos con <span className="text-red-500">*</span> son obligatorios.</span>
-            <div className="grid grid-cols-3 space-x-2">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold primary-text">Nombres <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nombres de la persona" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Ingrese el nombre del visitante.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold primary-text">Apellidos <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Apellidos de la persona" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Ingrese los apellidos del visitante.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="dni"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold primary-text">Cédula del visitante <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej.: V-12345678" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Ingrese la cédula del visitante. Recuerde que la cédula debe ser V-xxxxxxx o E-xxxxxxx.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {formType === 'vehicle' && (
-              <div className="grid grid-cols-4 space-x-2">
-                <FormField
-                  control={form.control}
-                  name="vehiclePlate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold primary-text">Placa del vehículo <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej.: ABC123" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ingrese la placa del vehículo del visitante.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="vehicleBrand"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold primary-text">Marca del vehículo <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej.: Toyota" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ingrese la marca del vehículo del visitante.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="vehicleModel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold primary-text">Modelo del vehículo <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej.: Corolla" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ingrese el modelo del vehículo del visitante.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="vehicleColor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-bold primary-text">Color del vehículo <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej.: Azul" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ingrese el color del vehículo del visitante.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-3 space-x-2">
-              <div className="flex space-x-2">
-                <FormField
-                  control={form.control}
-                  name="phonePrefix"
-                  render={({ field }) => (
-                    <FormItem className="col-span-1">
-                      <FormLabel className="font-bold primary-text">Prefijo  <span className="text-red-500">*</span></FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="(+58)" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {phoneOptions.map((option) => (
-                            <SelectItem key={option.id} value={option.id}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                      <FormDescription>
-                        Prefijo telefónico.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem className="w-full">
-                      <FormLabel className="font-bold primary-text">Número de teléfono <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej.: 1234567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        Escriba el número de teléfono del visitante.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="business"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel className="font-bold primary-text">Empresa <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Empresa a la que representa el visitante." {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Ingrese el nombre de la empresa a la que representa el visitante.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-            </div>
-
-            <div className="grid grid-cols-2 space-x-2">
-              <FormField
-                control={form.control}
-                name="gerency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold primary-text">Gerencia u Oficina <span className="text-red-500">*</span></FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="SELECCIONE LA GERENCIA U OFICINA A LA QUE ACUDE EL VISITANTE" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {gerencyOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.id}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Seleccione la gerencia u oficina a la que acude el visitante.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="contact"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold primary-text">Contacto <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contacto del visitante" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Ingrese el contacto del visitante dentro de la Corporación.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-
-            <FormField
-              control={form.control}
-              name="observation"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel className="primary-text font-bold">Observación <span className="text-red-500">*</span></FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Observaciones acerca del visitante..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Añada las observaciones acerca del visitante.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-between">
-              <Button type="button" onClick={handleBack} variant="outline">
-                Atrás
-              </Button>
-              <Button type="submit">
-                Siguiente
-              </Button>
-            </div>
-          </form>
-        )
+        return <VisitorTypeStep onSelectType={handleVisitorTypeSelect} onBack={() => setStep(1)} />;
+      case 2.5:
+        return <ExistingVisitorStep onNext={handleExistingVisitorFound} onBack={() => setStep(2)} />;
       case 3:
-        return (
-          <FormSummaryStep
-            formData={form.getValues()}
-            onBack={handleBack}
-            onConfirm={form.handleSubmit(handleFinalSubmit)}
-          />
-        )
+        return <VisitorPersonalInfoStep
+          form={form}
+          formType={formType}
+          onNext={() => setStep(4)}
+          onBack={() => setStep(2)}
+        />;
+      case 4:
+        return <VisitInfoStep
+          form={form}
+          entities={entities}
+          adminUnits={adminUnits}
+          directions={directions}
+          areas={areas}
+          loading={loading}
+          onNext={() => setStep(5)}
+          onBack={() => setStep(3)}
+        />;
+      case 5:
+        return <FormSummaryStep
+          formData={form.getValues()}
+          onBack={() => setStep(4)}
+          onConfirm={form.handleSubmit(handleFinalSubmit)}
+        />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <Form {...form}>
       <div className="space-y-4 max-h-[80vh] overflow-y-scroll p-2">
         {/* Progress indicator */}
         <div className="flex justify-between mb-8 sticky top-0 bg-background pt-2 pb-4 z-10">
-          {[1, 2, 3].map((stepNumber) => (
+          {[1, 2, 3, 4, 5, 6].map((stepNumber) => (
             <div
               key={stepNumber}
-              className={`flex items-center ${stepNumber < 3 ? 'flex-1' : ''}`}
+              className={`flex items-center ${stepNumber < 6 ? 'flex-1' : ''}`}
             >
               <div className={`rounded-full h-8 w-8 flex items-center justify-center border-2 
                 ${step >= stepNumber ? 'bg-primary text-white border-primary' : 'border-gray-300'}`}
               >
                 {stepNumber}
               </div>
-              {stepNumber < 3 && (
+              {stepNumber < 6 && (
                 <div className={`flex-1 h-1 mx-2 ${step > stepNumber ? 'bg-primary' : 'bg-gray-300'}`} />
               )}
             </div>
@@ -656,5 +1401,6 @@ export function AddItemForm({ onSubmit }) {
         {renderStep()}
       </div>
     </Form>
-  )
+  );
 }
+

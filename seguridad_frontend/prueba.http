@@ -48,3 +48,24 @@ content-type: application/json
 ###
 GET http://172.16.2.51:3001/api/visitors/
 content-type: application/json
+
+###
+GET http://localhost:3001/api/selects/entities
+content-type: application/json
+
+###
+GET http://localhost:3001/api/selects/administrative-units/1
+content-type: application/json
+
+###
+GET http://localhost:3001/api/selects/directions/860003000000
+content-type: application/json
+
+###
+GET http://localhost:3001/api/selects/areas/860004000000?type=unit
+content-type: application/json
+
+###
+GET http://localhost:3001/api/selects/areas/860003010000?type=direction
+content-type: application/json
+
