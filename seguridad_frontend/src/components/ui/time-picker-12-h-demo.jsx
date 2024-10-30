@@ -5,8 +5,9 @@ import { Label } from "@/components/ui/label";
 import { TimePickerInput } from "./time-picker-input";
 import { TimePeriodSelect } from "./period-select";
 
-export function TimePicker12Demo({ date, setDate }) {
-  const [period, setPeriod] = React.useState("PM");
+export function TimePicker12Demo({ date, setDate, period }) {
+  const [periodState, setPeriodState] = React.useState(period);
+  console.log(period)
 
   const minuteRef = React.useRef(null);
   const hourRef = React.useRef(null);
@@ -48,8 +49,8 @@ export function TimePicker12Demo({ date, setDate }) {
           Periodo
         </Label>
         <TimePeriodSelect
-          period={period}
-          setPeriod={setPeriod}
+          period={periodState}
+          setPeriod={setPeriodState}
           date={date}
           setDate={setDate}
           ref={periodRef}

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { add, format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,9 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { es } from 'date-fns/locale'
 
-export function DateTimePicker() {
-  const [date, setDate] = React.useState();
-
+export function DateTimePicker({ date, setDate }) {
   /**
    * carry over the current time when a user clicks a new day
    * instead of resetting to 00:00
@@ -42,14 +39,14 @@ export function DateTimePicker() {
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP HH:mm:ss", { locale: es }) : <span>Seleccionar fecha</span>}
+          {date ? format(date, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={(d) => handleSelect(d)}
+          onSelect={handleSelect}
           initialFocus
           locale={es}
         />

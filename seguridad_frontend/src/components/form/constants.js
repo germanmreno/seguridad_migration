@@ -105,6 +105,8 @@ export const formSchema = z.object({
   administrativeUnitId: z.number().min(1, 'Unidad Administrativa es requerida'),
   directionId: z.number().optional(),
   areaId: z.number().optional(),
+  dateVisit: z.date(),
+  dateHourVisit: z.date(),
 });
 
 export const PHONE_OPTIONS = [

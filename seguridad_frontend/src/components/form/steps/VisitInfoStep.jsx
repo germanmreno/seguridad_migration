@@ -121,13 +121,22 @@ const SelectFields = ({
             <Select
               disabled={loading}
               onValueChange={(value) => {
-                field.onChange(value);
-                form.setValue('administrativeUnitId', '');
-                form.setValue('directionId', '');
-                form.setValue('areaId', '');
+                const selectedEntity = entities.find(e => e.id.toString() === value);
+                field.onChange(value ? Number(value) : null);
+                // Store the name in a separate field
+                form.setValue('entityName', selectedEntity?.name || '');
+
+                // Clear dependent fields
+                form.setValue('administrativeUnitId', null);
+                form.setValue('administrativeUnitName', '');
+                form.setValue('directionId', null);
+                form.setValue('directionName', '');
+                form.setValue('areaId', null);
+                form.setValue('areaName', '');
+
                 loadAdminUnits(value);
               }}
-              value={field.value?.toString()}
+              value={field.value?.toString() || ""}
             >
               <FormControl>
                 <SelectTrigger className="w-full">
@@ -174,13 +183,21 @@ const SelectFields = ({
             <Select
               disabled={!form.watch('entityId') || loading}
               onValueChange={(value) => {
-                field.onChange(value);
-                form.setValue('directionId', '');
-                form.setValue('areaId', '');
+                const selectedUnit = adminUnits.find(u => u.id.toString() === value);
+                field.onChange(value ? Number(value) : null);
+                // Store the name in a separate field
+                form.setValue('administrativeUnitName', selectedUnit?.name || '');
+
+                // Clear dependent fields
+                form.setValue('directionId', null);
+                form.setValue('directionName', '');
+                form.setValue('areaId', null);
+                form.setValue('areaName', '');
+
                 loadDirections(value);
                 loadAreas(value);
               }}
-              value={field.value?.toString()}
+              value={field.value?.toString() || ""}
             >
               <FormControl>
                 <SelectTrigger className="w-full">
@@ -230,10 +247,12 @@ const SelectFields = ({
               <Select
                 disabled={!form.watch('administrativeUnitId') || loading}
                 onValueChange={(value) => {
-                  field.onChange(value);
-                  form.setValue('areaId', '');
+                  const selectedDirection = directions.find(d => d.id.toString() === value);
+                  field.onChange(value ? Number(value) : null);
+                  // Make sure we're setting the name even if it's an empty string
+                  form.setValue('directionName', selectedDirection?.name || '');
                 }}
-                value={field.value?.toString()}
+                value={field.value?.toString() || ""}
               >
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -283,8 +302,13 @@ const SelectFields = ({
               <FormLabel className="font-bold primary-text">Área</FormLabel>
               <Select
                 disabled={!form.watch('administrativeUnitId') || loading}
-                onValueChange={field.onChange}
-                value={field.value?.toString()}
+                onValueChange={(value) => {
+                  const selectedArea = areas.find(a => a.id.toString() === value);
+                  field.onChange(value ? Number(value) : null);
+                  // Make sure we're setting the name even if it's an empty string
+                  form.setValue('areaName', selectedArea?.name || '');
+                }}
+                value={field.value?.toString() || ""}
               >
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -329,7 +353,7 @@ const SelectFields = ({
 };
 
 const AdditionalFields = ({ form }) => (
-  <div className="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-center items-center">
     <FormField
       control={form.control}
       name="contact"
@@ -347,42 +371,79 @@ const AdditionalFields = ({ form }) => (
       )}
     />
 
-    {/* Time picker */}
     <FormField
       control={form.control}
-      name="contact"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className="font-bold primary-text">Día de la visita <span className="text-red-500">*</span></FormLabel>
-          <FormControl>
-            <DateTimePicker date={field.value} setDate={field.onChange} />
-          </FormControl>
-          <FormDescription>
-            Ingrese el nombre de la persona que será visitada.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
+      name="dateVisit"
+      render={({ field }) => {
+        return (
+          <FormItem>
+            <FormLabel className="font-bold primary-text">Día de la visita <span className="text-red-500">*</span></FormLabel>
+            <FormControl>
+              <DateTimePicker
+                date={field.value}
+                setDate={(newDate) => {
+                  if (!newDate) return;
+                  console.log('New date selected:', newDate);
+                  field.onChange(newDate);
+                }}
+              />
+            </FormControl>
+            <FormDescription>
+              Ingrese la fecha de la visita.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
 
     <FormField
       control={form.control}
-      name="contact"
+      name="dateHourVisit"
+      render={({ field }) => {
+        return (
+          <FormItem>
+            <FormLabel className="font-bold primary-text">Hora de la visita <span className="text-red-500">*</span></FormLabel>
+            <FormControl>
+              <TimePicker12Demo
+                date={field.value}
+                setDate={(newTime) => {
+                  if (!newTime) return;
+
+                  // Create a new date object with the current date and new time
+                  const selectedDate = new Date(field.value);
+                  selectedDate.setHours(newTime.getHours());
+                  selectedDate.setMinutes(newTime.getMinutes());
+
+                  // Update dateHourVisit with the new time
+                  field.onChange(selectedDate);
+                }}
+                period={field.value.getHours() >= 12 ? 'PM' : 'AM'}
+              />
+            </FormControl>
+            <FormDescription>
+              Ingrese la hora de la visita.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+
+    <FormField
+      control={form.control}
+      name="observation"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel className="font-bold primary-text">Persona a visitar <span className="text-red-500">*</span></FormLabel>
+        <FormItem className="col-span-2" >
+          <FormLabel className="font-bold primary-text">Observación</FormLabel>
           <FormControl>
-            <TimePicker12Demo date={field.value} setDate={field.onChange} />
+            <Textarea placeholder="Ingrese una observación..." {...field} />
           </FormControl>
           <FormDescription>
-            Ingrese el nombre de la persona que será visitada.
+            Ingrese una observación (opcional).
           </FormDescription>
-          <FormMessage />
         </FormItem>
       )}
     />
-
-
-    {/* Add Observation field */}
   </div>
 );

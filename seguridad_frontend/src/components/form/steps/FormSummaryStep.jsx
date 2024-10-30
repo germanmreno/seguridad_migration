@@ -2,6 +2,9 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
+
+  console.log(formData);
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold primary-text">Resumen del registro</h2>
@@ -24,13 +27,22 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
           title="Datos de la visita"
           className="mt-6"
           data={[
-            { label: "Gerencia", value: formData.gerency },
+            { label: "Ente", value: formData.entityName || 'No especificado' },
+            { label: "Unidad Administrativa", value: formData.administrativeUnitName || 'No especificado' },
+            ...(formData.directionId ? [{
+              label: "Dirección",
+              value: formData.directionName || 'No especificado'
+            }] : []),
+            ...(formData.areaId ? [{
+              label: "Área",
+              value: formData.areaName || 'No especificado'
+            }] : []),
             { label: "Contacto", value: formData.contact },
-            { label: "Fecha", value: format(formData.date, 'dd/MM/yyyy') },
-            { label: "Hora", value: format(formData.date, 'HH:mm') },
+            { label: "Fecha", value: format(formData.dateVisit, 'dd/MM/yyyy') },
+            { label: "Hora", value: format(formData.dateHourVisit, 'HH:mm') },
             {
               label: "Observación",
-              value: formData.observation,
+              value: formData.observation || 'Sin observaciones',
               fullWidth: true
             },
           ]}

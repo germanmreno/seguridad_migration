@@ -14,6 +14,7 @@ import { VisitInfoStep } from "./steps/VisitInfoStep";
 import { FormSummaryStep } from "./steps/FormSummaryStep";
 
 export function AddItemForm({ onSubmit }) {
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -21,20 +22,25 @@ export function AddItemForm({ onSubmit }) {
       firstName: "",
       lastName: "",
       dni: "",
-      date: new Date(),
       business: "",
       phonePrefix: "",
       phoneNumber: "",
       entityId: "",
+      entityName: "",
       administrativeUnitId: "",
+      administrativeUnitName: "",
       directionId: "",
+      directionName: "",
       areaId: "",
+      areaName: "",
       contact: "",
       observation: "",
       vehiclePlate: "",
       vehicleModel: "",
       vehicleBrand: "",
       vehicleColor: "",
+      dateVisit: new Date(),
+      dateHourVisit: new Date(),
     },
   });
 
