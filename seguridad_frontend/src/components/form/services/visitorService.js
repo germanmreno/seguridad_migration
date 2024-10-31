@@ -47,3 +47,23 @@ export const fetchAreas = async (
   const response = await axios.get(endpoint);
   return response.data;
 };
+
+export const registerVisitor = async (formData) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/visitors/register-complete`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.error || 'Error en el registro');
+    }
+    throw error;
+  }
+};

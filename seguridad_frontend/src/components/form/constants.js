@@ -3,10 +3,11 @@ import { z } from 'zod';
 export const STEPS = {
   FORM_TYPE: 1,
   VISITOR_TYPE: 2,
-  EXISTING_VISITOR: 2.5,
-  PERSONAL_INFO: 3,
-  VISIT_INFO: 4,
-  SUMMARY: 5,
+  EXISTING_VISITOR: 3,
+  PERSONAL_INFO: 4,
+  ENTERPRISE_INFO: 5,
+  VISIT_INFO: 6,
+  SUMMARY: 7,
 };
 
 export const formSchema = z.object({
@@ -14,6 +15,11 @@ export const formSchema = z.object({
   firstName: z.string({ required_error: 'Campo obligatorio' }).min(2, {
     message: 'El nombre debe tener al menos 2 caracteres.',
   }),
+  enterpriseName: z.string().min(1, 'El nombre de la empresa es requerido'),
+  enterpriseRif: z
+    .string()
+    .min(1, 'El RIF de la empresa es requerido')
+    .regex(/^[JGVEP]-\d{8}-\d$/, 'El RIF debe tener el formato J-12345678-9'),
   lastName: z.string({ required_error: 'Campo obligatorio' }).min(2, {
     message: 'El apellido debe tener al menos 2 caracteres.',
   }),

@@ -5,6 +5,11 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
 
   console.log(formData);
 
+  const handleConfirm = (e) => {
+    e.preventDefault();
+    onConfirm();
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold primary-text">Resumen del registro</h2>
@@ -14,7 +19,16 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
 
       <div className="grid p-4 border rounded-lg">
         <SummarySection
+          title="Datos de la empresa"
+          data={[
+            { label: "Nombre de la empresa", value: formData.enterpriseName },
+            { label: "RIF", value: formData.enterpriseRif },
+          ]}
+        />
+
+        <SummarySection
           title="Datos del visitante"
+          className="mt-6"
           data={[
             { label: "Nombre completo", value: `${formData.firstName} ${formData.lastName}` },
             { label: "Cédula", value: formData.dni },
@@ -66,7 +80,7 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
         <Button type="button" onClick={onBack} variant="outline">
           Atrás
         </Button>
-        <Button onClick={onConfirm}>
+        <Button type="submit" onClick={handleConfirm}>
           Confirmar Registro
         </Button>
       </div>

@@ -4,6 +4,7 @@ import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useFormSteps } from "./hooks/useFormSteps";
 import { STEPS, formSchema } from "./constants";
+import { registerVisitor } from './services/visitorService';
 
 // Import all step components
 import { FormTypeStep } from "./steps/FormTypeStep";
@@ -12,6 +13,7 @@ import { ExistingVisitorStep } from "./steps/ExistingVisitorStep";
 import { VisitorPersonalInfoStep } from "./steps/VisitorPersonalInfoStep";
 import { VisitInfoStep } from "./steps/VisitInfoStep";
 import { FormSummaryStep } from "./steps/FormSummaryStep";
+import { FormEnterpriseStep } from "./steps/FormEnterpriseStep";
 
 export function AddItemForm({ onSubmit }) {
 
@@ -39,6 +41,8 @@ export function AddItemForm({ onSubmit }) {
       vehicleModel: "",
       vehicleBrand: "",
       vehicleColor: "",
+      enterpriseName: "",
+      enterpriseRif: "",
       dateVisit: new Date(),
       dateHourVisit: new Date(),
     },
@@ -84,7 +88,7 @@ export function AddItemForm({ onSubmit }) {
     Object.entries(visitor).forEach(([key, value]) => {
       form.setValue(key, value);
     });
-    setStep(STEPS.VISIT_INFO);
+    setStep(STEPS.PERSONAL_INFO);
   };
 
   // Handle back navigation
@@ -94,9 +98,11 @@ export function AddItemForm({ onSubmit }) {
     } else if (step === STEPS.EXISTING_VISITOR) {
       setStep(STEPS.VISITOR_TYPE);
     } else if (step === STEPS.PERSONAL_INFO) {
-      setStep(STEPS.VISITOR_TYPE);
+      setStep(visitorType === 'existing' ? STEPS.EXISTING_VISITOR : STEPS.VISITOR_TYPE);
+    } else if (step === STEPS.ENTERPRISE_INFO) {
+      setStep(STEPS.PERSONAL_INFO);
     } else if (step === STEPS.VISIT_INFO) {
-      setStep(visitorType === 'existing' ? STEPS.EXISTING_VISITOR : STEPS.PERSONAL_INFO);
+      setStep(STEPS.ENTERPRISE_INFO);
     } else if (step === STEPS.SUMMARY) {
       setStep(STEPS.VISIT_INFO);
     }
@@ -105,16 +111,43 @@ export function AddItemForm({ onSubmit }) {
   // Handle form submission
   const handleSubmit = async (data) => {
     try {
-      await onSubmit(data);
+      const formattedData = {
+        dni_type_id: parseInt(data.dniType),
+        dni_number: parseInt(data.dni),
+        firstName: data.firstName,
+        lastName: data.lastName,
+        contact_number_prefix_id: parseInt(data.phonePrefix),
+        contact_number: data.phoneNumber,
+        enterpriseName: data.enterpriseName,
+        visit_type_id: parseInt(data.visitType),
+        entity_id: parseInt(data.entityId),
+        administrative_unit_id: data.administrativeUnitId.toString(),
+        area_id: data.areaId.toString(),
+        direction_id: data.directionId.toString(),
+        visit_date: new Date(data.dateVisit).toISOString(),
+        exit_date: new Date(data.dateHourVisit).toISOString(),
+        entry_type: data.entryType,
+        vehicle_plate: data.vehiclePlate || '',
+        vehicle_model: data.vehicleModel || '',
+        visit_reason: data.observation,
+        ...(data.formType === 'vehicle' && {
+          vehicle_brand: data.vehicleBrand || '',
+          vehicle_color: data.vehicleColor || '',
+        }),
+      };
+
+      console.log('Sending data:', formattedData);
+      const result = await registerVisitor(formattedData);
+      console.log('Server response:', result);
+
       toast.success("Registro completado exitosamente");
-      // Reset form and state
       form.reset();
       setStep(STEPS.FORM_TYPE);
       setFormType(null);
       setVisitorType(null);
     } catch (error) {
-      toast.error("Error al procesar el registro");
       console.error("Form submission error:", error);
+      toast.error(error.message || "Error al procesar el registro");
     }
   };
 
@@ -145,6 +178,15 @@ export function AddItemForm({ onSubmit }) {
           <VisitorPersonalInfoStep
             form={form}
             formType={formType}
+            onNext={() => setStep(STEPS.ENTERPRISE_INFO)}
+            onBack={handleBack}
+          />
+        );
+
+      case STEPS.ENTERPRISE_INFO:
+        return (
+          <FormEnterpriseStep
+            form={form}
             onNext={() => setStep(STEPS.VISIT_INFO)}
             onBack={handleBack}
           />
@@ -184,19 +226,19 @@ export function AddItemForm({ onSubmit }) {
 
   return (
     <Form {...form}>
-      <form className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="flex justify-between mb-8 sticky top-0 bg-background pt-2 pb-4 z-10">
-          {[1, 2, 3, 4, 5, 6].map((stepNumber) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((stepNumber) => (
             <div
               key={stepNumber}
-              className={`flex items-center ${stepNumber < 6 ? 'flex-1' : ''}`}
+              className={`flex items-center ${stepNumber < 7 ? 'flex-1' : ''}`}
             >
               <div className={`rounded-full h-8 w-8 flex items-center justify-center border-2 
                 ${step >= stepNumber ? 'bg-primary text-white border-primary' : 'border-gray-300'}`}
               >
                 {stepNumber}
               </div>
-              {stepNumber < 6 && (
+              {stepNumber < 7 && (
                 <div className={`flex-1 h-1 mx-2 ${step > stepNumber ? 'bg-primary' : 'bg-gray-300'}`} />
               )}
             </div>
