@@ -23,16 +23,17 @@ export const formSchema = z.object({
   lastName: z.string({ required_error: 'Campo obligatorio' }).min(2, {
     message: 'El apellido debe tener al menos 2 caracteres.',
   }),
-  dni: z
+  dniType: z.string({ required_error: 'Campo obligatorio' }),
+  dniNumber: z
     .string({ required_error: 'Campo obligatorio' })
-    .regex(/^[VE]-\d{2,}$/, {
-      message:
-        'La cédula debe comenzar con V- o E- seguido de al menos 2 números.',
+    .regex(/^\d{2,}$/, {
+      message: 'Ingrese solo números (mínimo 2 dígitos)',
     }),
   business: z.string({ required_error: 'Campo obligatorio' }).min(2, {
     message: 'La empresa debe tener al menos 2 caracteres.',
   }),
   phonePrefix: z.string({ required_error: 'Campo obligatorio' }),
+  phonePrefixId: z.string({ required_error: 'Campo obligatorio' }),
   phoneNumber: z
     .string({ required_error: 'Campo obligatorio' })
     .regex(/^\d+$/, {
@@ -116,9 +117,14 @@ export const formSchema = z.object({
 });
 
 export const PHONE_OPTIONS = [
-  { id: '+58412', label: '+58(412)' },
-  { id: '+58414', label: '+58(414)' },
-  { id: '+58416', label: '+58(416)' },
-  { id: '+58424', label: '+58(424)' },
-  { id: '+58426', label: '+58(426)' },
+  { id: '1', label: '+58(412)', value: '+58(412)' },
+  { id: '2', label: '+58(414)', value: '+58(414)' },
+  { id: '3', label: '+58(416)', value: '+58(416)' },
+  { id: '4', label: '+58(424)', value: '+58(424)' },
+  { id: '5', label: '+58(426)', value: '+58(426)' },
+];
+
+export const DNI_TYPES = [
+  { id: '1', label: 'Venezolano (V-)', value: 'V-' },
+  { id: '2', label: 'Extranjero (E-)', value: 'E-' },
 ];

@@ -2,15 +2,17 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PHONE_OPTIONS } from "../constants";
+import { PHONE_OPTIONS, DNI_TYPES } from "../constants";
 
 export const VisitorPersonalInfoStep = ({ form, onNext, onBack, formType }) => {
   const handleNext = async () => {
     const fieldsToValidate = [
       'firstName',
       'lastName',
-      'dni',
+      'dniType',
+      'dniNumber',
       'phonePrefix',
+      'phonePrefixId',
       'phoneNumber'
     ];
 
@@ -52,7 +54,7 @@ export const VisitorPersonalInfoStep = ({ form, onNext, onBack, formType }) => {
 };
 
 const PersonalInfoFields = ({ form }) => (
-  <div className="grid grid-cols-3 gap-4">
+  <div className="grid grid-cols-4 gap-4">
     <FormField
       control={form.control}
       name="firstName"
@@ -88,15 +90,47 @@ const PersonalInfoFields = ({ form }) => (
 
     <FormField
       control={form.control}
-      name="dni"
+      name="dniType"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel className="font-bold primary-text">Cédula <span className="text-red-500">*</span></FormLabel>
+        <FormItem className="flex-1">
+          <FormLabel className="font-bold primary-text">Tipo de Cédula <span className="text-red-500">*</span></FormLabel>
+          <Select
+            onValueChange={field.onChange}
+            value={field.value}
+            defaultValue={field.value}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder="V-" />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {DNI_TYPES.map((option) => (
+                <SelectItem key={option.id} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormDescription>
+            Tipo de cédula.
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+
+    <FormField
+      control={form.control}
+      name="dniNumber"
+      render={({ field }) => (
+        <FormItem className="flex-1">
+          <FormLabel className="font-bold primary-text">Número de Cédula <span className="text-red-500">*</span></FormLabel>
           <FormControl>
-            <Input placeholder="Ej.: V-12345678" {...field} />
+            <Input placeholder="Ej.: 12345678" {...field} />
           </FormControl>
           <FormDescription>
-            Ingrese la cédula del visitante (V-xxxxxxx o E-xxxxxxx).
+            Ingrese solo los números de la cédula.
           </FormDescription>
           <FormMessage />
         </FormItem>
@@ -116,12 +150,12 @@ const PersonalInfoFields = ({ form }) => (
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="(+58)" />
+                <SelectValue placeholder="+58(412)" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
               {PHONE_OPTIONS.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
+                <SelectItem key={option.id} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}

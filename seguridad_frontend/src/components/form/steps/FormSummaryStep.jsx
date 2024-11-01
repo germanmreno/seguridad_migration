@@ -5,8 +5,8 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
 
   console.log(formData);
 
-  const handleConfirm = (e) => {
-    e.preventDefault();
+  const handleConfirm = () => {
+    console.log("Confirm button clicked");
     onConfirm();
   };
 
@@ -31,8 +31,8 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
           className="mt-6"
           data={[
             { label: "Nombre completo", value: `${formData.firstName} ${formData.lastName}` },
-            { label: "Cédula", value: formData.dni },
-            { label: "Empresa", value: formData.business },
+            { label: "Cédula", value: `${formData.dniType} ${formData.dniNumber}` },
+            { label: "Empresa", value: formData.enterpriseName },
             { label: "Teléfono", value: `${formData.phonePrefix} ${formData.phoneNumber}` },
           ]}
         />
@@ -80,7 +80,10 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
         <Button type="button" onClick={onBack} variant="outline">
           Atrás
         </Button>
-        <Button type="submit" onClick={handleConfirm}>
+        <Button
+          type="button"
+          onClick={handleConfirm}
+        >
           Confirmar Registro
         </Button>
       </div>

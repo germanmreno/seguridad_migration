@@ -50,6 +50,9 @@ export const fetchAreas = async (
 
 export const registerVisitor = async (formData) => {
   try {
+    console.log('Sending request to:', `${API_URL}/visitors/register-complete`);
+    console.log('Request payload:', formData);
+
     const response = await axios.post(
       `${API_URL}/visitors/register-complete`,
       formData,
@@ -59,11 +62,18 @@ export const registerVisitor = async (formData) => {
         },
       }
     );
+
+    console.log('Server response:', response);
     return response.data;
   } catch (error) {
+    console.error('Registration error:', error);
     if (error.response) {
-      throw new Error(error.response.data.error || 'Error en el registro');
+      throw new Error(
+        error.response.data.message ||
+          error.response.data.error ||
+          'Error en el registro'
+      );
     }
-    throw error;
+    throw new Error('Error de conexión al servidor');
   }
 };

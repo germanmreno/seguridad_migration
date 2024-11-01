@@ -109,42 +109,49 @@ export function AddItemForm({ onSubmit }) {
   };
 
   // Handle form submission
-  const handleSubmit = async (data) => {
+  const onConfirmSubmit = async () => {
     try {
+      const data = form.getValues();
+      console.log("Starting submission with data:", data);
+
+      // Clean and format the DNI number (remove any non-numeric characters)
+      const cleanDniNumber = data.dni.replace(/\D/g, ''); // Remove all non-digits
+
       const formattedData = {
-        dni_type_id: parseInt(data.dniType),
-        dni_number: parseInt(data.dni),
+        dni_type_id: parseInt(data.dniType) || 1,
+        dni_number: parseInt(cleanDniNumber), // Convert to integer
         firstName: data.firstName,
         lastName: data.lastName,
-        contact_number_prefix_id: parseInt(data.phonePrefix),
+        contact_number_prefix_id: parseInt(data.phonePrefix) || 1,
         contact_number: data.phoneNumber,
         enterpriseName: data.enterpriseName,
-        visit_type_id: parseInt(data.visitType),
+        visit_type_id: parseInt(data.visitType) || 1,
         entity_id: parseInt(data.entityId),
-        administrative_unit_id: data.administrativeUnitId.toString(),
-        area_id: data.areaId.toString(),
-        direction_id: data.directionId.toString(),
-        visit_date: new Date(data.dateVisit).toISOString(),
-        exit_date: new Date(data.dateHourVisit).toISOString(),
-        entry_type: data.entryType,
+        administrative_unit_id: parseInt(data.administrativeUnitId),
+        area_id: parseInt(data.areaId),
+        direction_id: parseInt(data.directionId),
+        visit_date: data.dateVisit.toISOString(),
+        exit_date: data.dateHourVisit.toISOString(),
+        entry_type: data.entryType || 'normal',
         vehicle_plate: data.vehiclePlate || '',
         vehicle_model: data.vehicleModel || '',
-        visit_reason: data.observation,
+        visit_reason: data.observation || '',
         ...(data.formType === 'vehicle' && {
           vehicle_brand: data.vehicleBrand || '',
           vehicle_color: data.vehicleColor || '',
         }),
       };
 
-      console.log('Sending data:', formattedData);
+      console.log('Formatted Data:', formattedData);
       const result = await registerVisitor(formattedData);
-      console.log('Server response:', result);
 
-      toast.success("Registro completado exitosamente");
-      form.reset();
-      setStep(STEPS.FORM_TYPE);
-      setFormType(null);
-      setVisitorType(null);
+      if (result) {
+        toast.success("Registro completado exitosamente");
+        form.reset();
+        setStep(STEPS.FORM_TYPE);
+        setFormType(null);
+        setVisitorType(null);
+      }
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error(error.message || "Error al procesar el registro");
@@ -215,7 +222,7 @@ export function AddItemForm({ onSubmit }) {
           <FormSummaryStep
             formData={form.getValues()}
             onBack={handleBack}
-            onConfirm={form.handleSubmit(handleSubmit)}
+            onConfirm={onConfirmSubmit}
           />
         );
 
@@ -226,7 +233,13 @@ export function AddItemForm({ onSubmit }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form
+        className="space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault(); // Prevent default form submission
+          console.log("Form submitted");
+        }}
+      >
         <div className="flex justify-between mb-8 sticky top-0 bg-background pt-2 pb-4 z-10">
           {[1, 2, 3, 4, 5, 6, 7].map((stepNumber) => (
             <div
