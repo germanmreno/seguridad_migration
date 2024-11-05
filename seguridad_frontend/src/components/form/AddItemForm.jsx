@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useFormSteps } from "./hooks/useFormSteps";
-import { STEPS, formSchema } from "./constants";
+import { PHONE_OPTIONS, STEPS, formSchema } from "./constants";
 import { registerVisitor } from './services/visitorService';
 
 // Import all step components
@@ -15,7 +15,7 @@ import { VisitInfoStep } from "./steps/VisitInfoStep";
 import { FormSummaryStep } from "./steps/FormSummaryStep";
 import { FormEnterpriseStep } from "./steps/FormEnterpriseStep";
 
-export function AddItemForm({ onSubmit }) {
+export function AddItemForm({ onSubmitSuccess }) {
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -23,10 +23,12 @@ export function AddItemForm({ onSubmit }) {
       formType: "",
       firstName: "",
       lastName: "",
-      dni: "",
-      business: "",
-      phonePrefix: "",
+      dniType: "",
+      dniNumber: "",
+      contactNumberPrefixId: "",
       phoneNumber: "",
+      enterpriseName: "",
+      enterpriseRif: "",
       entityId: "",
       entityName: "",
       administrativeUnitId: "",
@@ -41,8 +43,6 @@ export function AddItemForm({ onSubmit }) {
       vehicleModel: "",
       vehicleBrand: "",
       vehicleColor: "",
-      enterpriseName: "",
-      enterpriseRif: "",
       dateVisit: new Date(),
       dateHourVisit: new Date(),
     },
@@ -112,31 +112,35 @@ export function AddItemForm({ onSubmit }) {
   const onConfirmSubmit = async () => {
     try {
       const data = form.getValues();
-      console.log("Starting submission with data:", data);
+      const formattedContactNumberPrefixId = PHONE_OPTIONS.find(option => option.value === data.contactNumberPrefixId)?.id || 1;
+      const formattedVisitTypeId = data.formType === 'pedestrian' ? 1 : 2;
 
-      // Clean and format the DNI number (remove any non-numeric characters)
-      const cleanDniNumber = data.dni.replace(/\D/g, ''); // Remove all non-digits
+      console.log(data.formType)
+      console.log("Starting submission with data:", data);
+      console.log(formattedVisitTypeId)
 
       const formattedData = {
+        dni_type: data.dniType,
         dni_type_id: parseInt(data.dniType) || 1,
-        dni_number: parseInt(cleanDniNumber), // Convert to integer
+        dni_number: parseInt(data.dniNumber),
         firstName: data.firstName,
         lastName: data.lastName,
-        contact_number_prefix_id: parseInt(data.phonePrefix) || 1,
+        contact_number_prefix_id: formattedContactNumberPrefixId,
         contact_number: data.phoneNumber,
         enterpriseName: data.enterpriseName,
-        visit_type_id: parseInt(data.visitType) || 1,
+        enterpriseRif: data.enterpriseRif,
+        visit_type_id: formattedVisitTypeId,
         entity_id: parseInt(data.entityId),
         administrative_unit_id: parseInt(data.administrativeUnitId),
         area_id: parseInt(data.areaId),
         direction_id: parseInt(data.directionId),
         visit_date: data.dateVisit.toISOString(),
         exit_date: data.dateHourVisit.toISOString(),
-        entry_type: data.entryType || 'normal',
-        vehicle_plate: data.vehiclePlate || '',
-        vehicle_model: data.vehicleModel || '',
+        entry_type: data.entryType || 'pedestrian',
         visit_reason: data.observation || '',
         ...(data.formType === 'vehicle' && {
+          vehicle_plate: data.vehiclePlate || '',
+          vehicle_model: data.vehicleModel || '',
           vehicle_brand: data.vehicleBrand || '',
           vehicle_color: data.vehicleColor || '',
         }),
@@ -151,6 +155,7 @@ export function AddItemForm({ onSubmit }) {
         setStep(STEPS.FORM_TYPE);
         setFormType(null);
         setVisitorType(null);
+        onSubmitSuccess();
       }
     } catch (error) {
       console.error("Form submission error:", error);

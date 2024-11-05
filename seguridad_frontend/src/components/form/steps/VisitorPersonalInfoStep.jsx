@@ -11,10 +11,12 @@ export const VisitorPersonalInfoStep = ({ form, onNext, onBack, formType }) => {
       'lastName',
       'dniType',
       'dniNumber',
-      'phonePrefix',
-      'phonePrefixId',
+      'contactNumberPrefixId',
       'phoneNumber'
     ];
+
+    const fieldsToValidateErrors = form.formState.errors;
+    console.log(fieldsToValidateErrors);
 
     if (formType === 'vehicle') {
       fieldsToValidate.push(
@@ -26,6 +28,7 @@ export const VisitorPersonalInfoStep = ({ form, onNext, onBack, formType }) => {
     }
 
     const isValid = await form.trigger(fieldsToValidate);
+    console.log("isValid", isValid);
     if (isValid) onNext();
   };
 
@@ -101,7 +104,7 @@ const PersonalInfoFields = ({ form }) => (
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="V-" />
+                <SelectValue placeholder="V- o E-" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
@@ -139,7 +142,7 @@ const PersonalInfoFields = ({ form }) => (
 
     <FormField
       control={form.control}
-      name="phonePrefix"
+      name="contactNumberPrefixId"
       render={({ field }) => (
         <FormItem className="flex-1">
           <FormLabel className="font-bold primary-text">Prefijo <span className="text-red-500">*</span></FormLabel>
@@ -150,7 +153,7 @@ const PersonalInfoFields = ({ form }) => (
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="+58(412)" />
+                <SelectValue placeholder="+58(4..)" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>

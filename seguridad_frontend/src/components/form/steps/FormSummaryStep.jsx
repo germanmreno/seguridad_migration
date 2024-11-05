@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { PHONE_OPTIONS } from "../constants";
 
 export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
 
   console.log(formData);
+  const formattedPrefixId = PHONE_OPTIONS.find(option => option.value === formData.contactNumberPrefixId)?.value || 'Error';
 
   const handleConfirm = () => {
     console.log("Confirm button clicked");
@@ -31,9 +33,9 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
           className="mt-6"
           data={[
             { label: "Nombre completo", value: `${formData.firstName} ${formData.lastName}` },
-            { label: "Cédula", value: `${formData.dniType} ${formData.dniNumber}` },
+            { label: "Cédula", value: `${formData.dniType === "1" ? 'V-' : 'E-'} ${formData.dniNumber}` },
             { label: "Empresa", value: formData.enterpriseName },
-            { label: "Teléfono", value: `${formData.phonePrefix} ${formData.phoneNumber}` },
+            { label: "Teléfono", value: `${formattedPrefixId} ${formData.phoneNumber}` },
           ]}
         />
 

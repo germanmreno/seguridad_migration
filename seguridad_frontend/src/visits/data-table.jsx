@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 
 import {
   flexRender,
@@ -21,11 +21,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-import { AddItemModal } from "@/AddItemModal"
 import { Trash } from "lucide-react"
 
 import { myCustomFilterFn } from "./columns"
 import { toast } from "sonner"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { AddItemModal } from "@/AddItemModal"
 
 export function DataTable({ columns, user }) {
 
@@ -47,11 +48,7 @@ export function DataTable({ columns, user }) {
     }
   }, [columns, isAdmin])
 
-  useEffect(() => {
-    fetchVisitors()
-  }, [])
-
-  const fetchVisitors = async () => {
+  const fetchVisitors = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:3001/api/visitors')
       if (response.ok) {
@@ -66,7 +63,11 @@ export function DataTable({ columns, user }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchVisitors()
+  }, [fetchVisitors])
 
   const handleAddItem = async (newItem) => {
     const itemWithRegisteredBy = {
@@ -148,6 +149,10 @@ export function DataTable({ columns, user }) {
     }
   }
 
+  const refreshData = () => {
+    fetchVisitors();
+  };
+
   const table = useReactTable({
     data: dataVisitors,
     columns: visibleColumns,
@@ -168,22 +173,22 @@ export function DataTable({ columns, user }) {
     },
     meta: {
       deleteVisitor: (id) => deleteVisitor(id),
+      refreshData,
     },
   })
 
   return (
-    <div>
-      <div className="flex items-center justify-between py-4 px-4 bg-gray-200/90 border-2 mt-[-5px] mb-[-1px] border-solid border-gray">
-        <div className="flex flex-row">
-          <Input
-            placeholder='Filtrar por...'
-            value={globalFilter ?? ''}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className='max-w-sm bg-white '
-          />
-        </div>
+    <div className="table-container">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4 px-4 bg-gray-200/90 border-2 mt-[-5px] mb-[-1px] border-solid border-gray">
+        <Input
+          placeholder='Filtrar por...'
+          value={globalFilter ?? ''}
+          onChange={(event) => setGlobalFilter(event.target.value)}
+          className='max-w-sm bg-white'
+        />
 
-        <div className="flex space-x-2">
+        <div className="flex gap-2 mt-4 md:mt-0">
+          <AddItemModal refreshData={refreshData} />
           {isAdmin && (
             <Button
               variant="destructive"
@@ -192,78 +197,96 @@ export function DataTable({ columns, user }) {
               disabled={Object.keys(rowSelection).length === 0}
             >
               <Trash className="mr-2" />
-              Borrar seleccionados
+              <span className="hidden sm:inline primary-text">Borrar seleccionados</span>
+              <span className="sm:hidden">Borrar</span>
             </Button>
           )}
-          <AddItemModal onAddItem={handleAddItem} />
         </div>
       </div>
 
       <div className="rounded-md border-solid border-2 border-gray">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-white">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </TableHead>
+        <ScrollArea className="rounded-md">
+          <div className="relative w-full overflow-auto">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className="text-white whitespace-nowrap"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="whitespace-nowrap"
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length} className="h-24 text-center">
+                      Sin resultados.
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length} className="h-24 text-center">
-                  Sin resultados.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <div className='space-x-2 py-4 px-2 flex justify-between items-center footer-foreground'>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+
+        <div className='space-x-2 py-4 px-2 flex flex-col sm:flex-row justify-between items-center footer-foreground'>
           {isAdmin && (
-            <div className='flex-1 text-sm text-white'>
+            <div className='text-sm text-white text-center sm:text-left mb-2 sm:mb-0'>
               {table.getFilteredSelectedRowModel().rows.length} de{' '}
               {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
             </div>
           )}
 
-          <div className='flex items-center justify-end space-x-2'>
+          <div className='flex items-center gap-2'>
             <Button
               variant='outline'
               size='sm'
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
-              Anterior
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden">←</span>
             </Button>
+            <div className="text-sm text-white px-2">
+              Página {table.getState().pagination.pageIndex + 1} de{' '}
+              {table.getPageCount()}
+            </div>
             <Button
               variant='outline'
               size='sm'
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
-              Siguiente
+              <span className="hidden sm:inline">Siguiente</span>
+              <span className="sm:hidden">→</span>
             </Button>
           </div>
         </div>

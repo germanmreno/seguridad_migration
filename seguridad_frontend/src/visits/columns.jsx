@@ -1,4 +1,4 @@
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, Clock, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 export const myCustomFilterFn = (row, id, filterValue) => {
   const lowerFilterValue = filterValue.toLowerCase();
@@ -17,6 +18,27 @@ export const myCustomFilterFn = (row, id, filterValue) => {
   let rowValues = Object.values(row.original).join(' ').toLowerCase();
 
   return filterParts.every((part) => rowValues.includes(part));
+};
+
+const handleExit = async (visitId, table) => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/visitors/exit/${visitId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+    });
+
+    if (response.ok) {
+      toast.success('Salida registrada exitosamente');
+      table.options.meta?.refreshData();
+    } else {
+      toast.error('Error al registrar la salida');
+    }
+  } catch (error) {
+    console.error('Error marking visit exit:', error);
+    toast.error('Error al registrar la salida');
+  }
 };
 
 export const columns = [
@@ -40,35 +62,28 @@ export const columns = [
     enableHiding: false,
   },
   {
-    accessorKey: "firstName",
+    id: "fullName",
+    accessorKey: "visitor.fullName",
+    accessorFn: (row) => row.visitor?.fullName ?? 'N/A',
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Nombres
+          Nombre Completo
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
   },
   {
-    accessorKey: "lastName",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Apellidos
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
+    id: "dni",
+    accessorFn: (row) => {
+      const dniType = row.visitor?.dniType;
+      const dniNumber = row.visitor?.dniNumber;
+      return dniType && dniNumber ? `${dniType}-${dniNumber}` : 'N/A';
     },
-  },
-  {
-    accessorKey: "dni",
     header: ({ column }) => {
       return (
         <Button
@@ -82,7 +97,8 @@ export const columns = [
     },
   },
   {
-    accessorKey: "business",
+    id: "company",
+    accessorFn: (row) => row.visitor?.company?.name ?? 'N/A',
     header: ({ column }) => {
       return (
         <Button
@@ -96,11 +112,43 @@ export const columns = [
     },
   },
   {
-    accessorKey: "phone",
+    id: "companyRif",
+    accessorFn: (row) => row.visitor?.company?.rif ?? 'N/A',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Empresa
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+  },
+  {
+    id: "phone",
+    accessorFn: (row) => row.visitor?.contactNumber ?? 'N/A',
     header: "Teléfono",
   },
   {
-    accessorKey: "gerency",
+    id: "entity",
+    accessorFn: (row) => row.location?.entity ?? 'N/A',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Entidad
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+  },
+  {
+    id: "gerency",
+    accessorFn: (row) => row.location?.administrativeUnit ?? 'N/A',
     header: ({ column }) => {
       return (
         <Button
@@ -114,21 +162,38 @@ export const columns = [
     },
   },
   {
-    accessorKey: "contact",
+    id: "direction",
+    accessorFn: (row) => row.location?.direction ?? 'N/A',
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Contacto
+          Dirección
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
   },
   {
-    accessorKey: "createdAt",
+    id: "area",
+    accessorFn: (row) => row.location?.area ?? 'N/A',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Área
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+  },
+  {
+    id: "visitDate",
+    accessorKey: "visitDate",
     header: ({ column }) => {
       return (
         <Button
@@ -141,12 +206,35 @@ export const columns = [
       )
     },
     cell: ({ row }) => {
-      const date = new Date(row.original.createdAt);
+      const date = new Date(row.original.visitDate);
       return date.toLocaleDateString();
     },
   },
   {
-    accessorKey: "hour",
+    id: "exitDate",
+    accessorKey: "exitDate",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Hora de Salida
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const exitDate = row.original.exitDate;
+      return exitDate ? new Date(exitDate).toLocaleString() : 'Pendiente';
+    },
+  },
+  {
+    id: "visitTime",
+    accessorFn: (row) => {
+      const date = new Date(row.visitDate);
+      return date.toLocaleTimeString();
+    },
     header: ({ column }) => {
       return (
         <Button
@@ -160,41 +248,65 @@ export const columns = [
     },
   },
   {
-    id: "registered_by",
-    accessorKey: "registered_by",
+    id: "visitType",
+    accessorKey: "visitType",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Registrado por
+          Tipo de Visita
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
   },
   {
+    id: "name",
+    accessorKey: "name",
+    header: "Nombre",
+    cell: ({ row }) => {
+      const value = row.getValue("name")
+      return (
+        <div className="flex flex-col sm:flex-row sm:items-center">
+          <span className="font-medium">{value}</span>
+          {/* You can add additional responsive content here */}
+        </div>
+      )
+    },
+  },
+  {
     id: "actions",
     cell: ({ row, table }) => {
-      const visitor = row.original
+      const visit = row.original
+      const hasExitDate = Boolean(visit.exitDate)
 
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú de acciones</span>
+              <span className="sr-only">Abrir menú</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-[160px]">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {!hasExitDate && (
+              <DropdownMenuItem
+                onClick={() => handleExit(visit.id, table)}
+              >
+                <Clock className="mr-2 h-4 w-4" />
+                <span>Marcar salida</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
-              onClick={() => table.options.meta?.deleteVisitor(visitor.id)}
+              onClick={() => table.options.meta?.deleteVisitor(visit.id)}
               className="text-red-600"
             >
-              Borrar registro
+              <Trash className="mr-2 h-4 w-4" />
+              <span>Borrar</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

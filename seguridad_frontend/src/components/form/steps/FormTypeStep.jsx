@@ -25,7 +25,7 @@ export const FormTypeStep = ({ onSelectType }) => {
           </div>
         </Button>
         <Button
-          onClick={() => onSelectType('person')}
+          onClick={() => onSelectType('pedestrian')}
           variant="outline"
           className="h-32"
         >
