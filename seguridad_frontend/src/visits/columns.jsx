@@ -192,22 +192,56 @@ export const columns = [
     },
   },
   {
-    id: "visitDate",
-    accessorKey: "visitDate",
+    id: "entryDateTime",
+    accessorFn: (row) => {
+      const dateStr = row.visitDate;
+      const timeStr = row.visitHour;
+      if (!dateStr || !timeStr) return null;
+
+      const date = new Date(dateStr);
+      const time = new Date(timeStr);
+
+      // Combine date and time
+      const combined = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        time.getHours(),
+        time.getMinutes(),
+        time.getSeconds()
+      );
+
+      return combined.getTime(); // for sorting
+    },
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Fecha
+          Fecha de Entrada
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
     cell: ({ row }) => {
-      const date = new Date(row.original.visitDate);
-      return date.toLocaleDateString();
+      const dateStr = row.original.visitDate;
+      const timeStr = row.original.visitHour;
+      if (!dateStr || !timeStr) return 'N/A';
+
+      const date = new Date(dateStr);
+      const time = new Date(timeStr);
+
+      const combined = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        time.getHours(),
+        time.getMinutes(),
+        time.getSeconds()
+      );
+
+      return combined.toLocaleString();
     },
   },
   {
@@ -219,7 +253,7 @@ export const columns = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Hora de Salida
+          Fecha de Salida
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -230,26 +264,8 @@ export const columns = [
     },
   },
   {
-    id: "visitTime",
-    accessorFn: (row) => {
-      const date = new Date(row.visitDate);
-      return date.toLocaleTimeString();
-    },
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Hora
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-  },
-  {
     id: "visitType",
-    accessorKey: "visitType",
+    accessorFn: (row) => row.visitType === 'Pedestrian' ? 'Peatonal' : 'Vehicular',
     header: ({ column }) => {
       return (
         <Button
@@ -259,20 +275,6 @@ export const columns = [
           Tipo de Visita
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
-    },
-  },
-  {
-    id: "name",
-    accessorKey: "name",
-    header: "Nombre",
-    cell: ({ row }) => {
-      const value = row.getValue("name")
-      return (
-        <div className="flex flex-col sm:flex-row sm:items-center">
-          <span className="font-medium">{value}</span>
-          {/* You can add additional responsive content here */}
-        </div>
       )
     },
   },

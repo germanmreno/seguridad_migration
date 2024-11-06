@@ -85,9 +85,28 @@ export function AddItemForm({ onSubmitSuccess }) {
 
   // Handle existing visitor selection
   const handleExistingVisitor = (visitor) => {
-    Object.entries(visitor).forEach(([key, value]) => {
-      form.setValue(key, value);
-    });
+    // Map the visitor data to form fields
+    form.setValue("firstName", visitor.firstName);
+    form.setValue("lastName", visitor.lastName);
+
+    // Map DNI type based on the abbreviation
+    const dniTypeValue = visitor.dniType.abbreviation === 'V' ? '1' : '2';
+    form.setValue("dniType", dniTypeValue);
+
+    form.setValue("dniNumber", visitor.dniNumber.toString());
+
+    // Handle contact info if it exists
+    if (visitor.contactInfo) {
+      form.setValue("contactNumberPrefixId", visitor.contactInfo.prefix);
+      form.setValue("phoneNumber", visitor.contactInfo.number);
+    }
+
+    // Handle company info if it exists
+    if (visitor.company) {
+      form.setValue("enterpriseName", visitor.company.name);
+      form.setValue("enterpriseRif", visitor.company.rif);
+    }
+
     setStep(STEPS.PERSONAL_INFO);
   };
 
@@ -115,9 +134,7 @@ export function AddItemForm({ onSubmitSuccess }) {
       const formattedContactNumberPrefixId = PHONE_OPTIONS.find(option => option.value === data.contactNumberPrefixId)?.id || 1;
       const formattedVisitTypeId = data.formType === 'pedestrian' ? 1 : 2;
 
-      console.log(data.formType)
       console.log("Starting submission with data:", data);
-      console.log(formattedVisitTypeId)
 
       const formattedData = {
         dni_type: data.dniType,
@@ -135,7 +152,7 @@ export function AddItemForm({ onSubmitSuccess }) {
         area_id: parseInt(data.areaId),
         direction_id: parseInt(data.directionId),
         visit_date: data.dateVisit.toISOString(),
-        exit_date: data.dateHourVisit.toISOString(),
+        visit_hour: data.dateHourVisit.toISOString(),
         entry_type: data.entryType || 'pedestrian',
         visit_reason: data.observation || '',
         ...(data.formType === 'vehicle' && {
@@ -238,13 +255,7 @@ export function AddItemForm({ onSubmitSuccess }) {
 
   return (
     <Form {...form}>
-      <form
-        className="space-y-6"
-        onSubmit={(e) => {
-          e.preventDefault(); // Prevent default form submission
-          console.log("Form submitted");
-        }}
-      >
+      <div className="space-y-6">
         <div className="flex justify-between mb-8 sticky top-0 bg-background pt-2 pb-4 z-10">
           {[1, 2, 3, 4, 5, 6, 7].map((stepNumber) => (
             <div
@@ -264,7 +275,7 @@ export function AddItemForm({ onSubmitSuccess }) {
         </div>
 
         {renderStep()}
-      </form>
+      </div>
     </Form>
   );
 } 

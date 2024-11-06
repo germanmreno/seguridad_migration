@@ -4,6 +4,7 @@ import PrivateRoute from './routes/PrivateRoute';
 import { EntriesPage } from './EntriesPage';
 import { useState, useEffect, useCallback } from 'react';
 import { NavBar } from './layout/NavBar';
+import { VisitsDashboard } from './components/VisitsDashboard';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,6 +45,12 @@ function App() {
             <>
               <NavBar handleLogout={handleLogout} user={user} />
               <EntriesPage user={user} />
+            </>
+          } />
+          <Route path="/visits-dashboard" element={
+            <>
+              <NavBar handleLogout={handleLogout} user={user} />
+              <VisitsDashboard user={user} />
             </>
           } />
         </Route>

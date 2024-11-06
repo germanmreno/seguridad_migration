@@ -2,16 +2,25 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:3001/api';
 
-export const searchVisitor = async (dni) => {
+export const searchVisitor = async (dniNumber) => {
   try {
-    const response = await axios.get(`${API_URL}/visitors/search-visitor`, {
-      params: { dni },
-    });
-    return response.data;
-  } catch (error) {
-    if (error.response?.status === 404) {
-      return null; // Visitor not found
+    console.log('Calling API with DNI:', dniNumber);
+    const response = await fetch(
+      `${API_URL}/visitors/search-visitor?dni=${dniNumber}`
+    );
+    console.log('Raw API response:', response);
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API error response:', error);
+      throw new Error(error.details || 'Error searching for visitor');
     }
+
+    const data = await response.json();
+    console.log('API success response:', data);
+    return data;
+  } catch (error) {
+    console.error('Service error:', error);
     throw error;
   }
 };
@@ -75,5 +84,17 @@ export const registerVisitor = async (formData) => {
       );
     }
     throw new Error('Error de conexión al servidor');
+  }
+};
+
+export const fetchDashboardStats = async (timeRange = 'week') => {
+  try {
+    const response = await axios.get(`${API_URL}/visitors/dashboard-stats`, {
+      params: { timeRange },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    throw new Error('Error al obtener estadísticas del dashboard');
   }
 };

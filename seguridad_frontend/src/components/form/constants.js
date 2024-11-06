@@ -122,6 +122,14 @@ export const PHONE_OPTIONS = [
 ];
 
 export const DNI_TYPES = [
-  { id: 1, label: 'Venezolano (V-)', value: 'V-' },
-  { id: 2, label: 'Extranjero (E-)', value: 'E-' },
+  {
+    id: 1,
+    value: '1',
+    label: 'V- Venezolano',
+  },
+  {
+    id: 2,
+    value: '2',
+    label: 'E- Extranjero',
+  },
 ];

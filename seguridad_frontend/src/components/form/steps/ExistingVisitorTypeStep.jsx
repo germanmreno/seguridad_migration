@@ -8,9 +8,8 @@ import { searchVisitor } from '../services/visitorService.js';
 export const ExistingVisitorStep = ({ onNext, onBack }) => {
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const searchDni = e.target.searchDni.value;
+  const handleSearch = async () => {
+    const searchDni = document.querySelector('input[name="searchDni"]').value;
     if (!searchDni) {
       toast.error("Por favor, ingrese un DNI para buscar.");
       return;
@@ -18,16 +17,18 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
 
     setIsSearching(true);
     try {
-      const visitor = await searchVisitor(searchDni);
-      if (visitor) {
+      const response = await searchVisitor(searchDni);
+
+      if (response.exists) {
+        const { visitor } = response;
         onNext(visitor);
-        toast.success(`Visitante encontrado: ${visitor.firstName} ${visitor.lastName}`);
+        toast.success(`Visitante encontrado: ${visitor.fullName}`);
       } else {
         toast.error("No se encontró ningún visitante con ese DNI.");
       }
     } catch (error) {
       console.error("Error searching for visitor:", error);
-      toast.error("Hubo un problema al buscar el visitante. Por favor, intente de nuevo.");
+      toast.error(error.details || "Hubo un problema al buscar el visitante. Por favor, intente de nuevo.");
     } finally {
       setIsSearching(false);
     }
@@ -40,14 +41,24 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
         Ingrese el DNI del visitante para buscar sus datos.
       </span>
 
-      <form onSubmit={handleSearch} className="space-y-4">
+      <div className="space-y-4">
         <div className="flex gap-2">
           <Input
             name="searchDni"
             placeholder="Ingrese el DNI (Ej: V-12345678)"
             className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
           />
-          <Button type="submit" disabled={isSearching}>
+          <Button
+            type="button"
+            onClick={handleSearch}
+            disabled={isSearching}
+          >
             {isSearching ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -55,12 +66,16 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
             )}
           </Button>
         </div>
-      </form>
 
-      <div className="flex justify-between mt-8">
-        <Button onClick={onBack} variant="outline">
-          Atrás
-        </Button>
+        <div className="flex justify-between mt-8">
+          <Button
+            type="button"
+            onClick={onBack}
+            variant="outline"
+          >
+            Atrás
+          </Button>
+        </div>
       </div>
     </div>
   );
