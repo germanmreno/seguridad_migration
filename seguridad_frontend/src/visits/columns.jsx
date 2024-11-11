@@ -15,8 +15,27 @@ export const myCustomFilterFn = (row, id, filterValue) => {
   const lowerFilterValue = filterValue.toLowerCase();
   const filterParts = lowerFilterValue.split(' ');
 
-  let rowValues = Object.values(row.original).join(' ').toLowerCase();
+  // Create a flat object with all the searchable values
+  const searchableValues = {
+    fullName: row.original.visitor?.fullName,
+    dni: `${row.original.visitor?.dniType}-${row.original.visitor?.dniNumber}`,
+    company: row.original.visitor?.company?.name,
+    companyRif: row.original.visitor?.company?.rif,
+    phone: row.original.visitor?.contactNumber,
+    entity: row.original.location?.entity,
+    gerency: row.original.location?.administrativeUnit,
+    direction: row.original.location?.direction,
+    area: row.original.location?.area,
+    visitType: row.original.visitType === 'Pedestrian' ? 'Peatonal' : 'Vehicular',
+  };
 
+  // Convert all values to a single searchable string
+  const rowValues = Object.values(searchableValues)
+    .filter(Boolean) // Remove null/undefined values
+    .join(' ')
+    .toLowerCase();
+
+  // Check if all filter parts are included in the searchable string
   return filterParts.every((part) => rowValues.includes(part));
 };
 

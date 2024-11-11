@@ -16,7 +16,7 @@ export const EntriesPage = ({ user }) => {
         <div className="bg-[#24387d] text-white rounded-t-lg w-full">
           <div className="h-12 flex items-center p-4">
             <h1 className="primary-text p-0 m-0">
-              REGISTRO DE VISITANTES DE LA CORPORACIÓN VENEZOLANA DE MINERÍA
+              REGISTRO DE VISITANTES DEL EDIFICIO PAWA
             </h1>
           </div>
         </div>

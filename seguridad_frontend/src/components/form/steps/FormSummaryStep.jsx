@@ -13,9 +13,11 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold primary-text">Resumen del registro</h2>
-      <span className="text-sm text-muted-foreground">
+    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white">
+        Resumen del registro
+      </h2>
+      <span className="text-sm text-gray-600 dark:text-gray-300">
         Asegúrese de que los datos sean correctos antes de confirmar el registro.
       </span>
 
@@ -95,7 +97,9 @@ export const FormSummaryStep = ({ formData, onBack, onConfirm }) => {
 
 const SummarySection = ({ title, data, className = "" }) => (
   <>
-    <h1 className={`text-lg font-bold primary-text ${className}`}>{title}</h1>
+    <h1 className={`text-lg font-bold bg-blue-800 px-4 py-2 rounded-md text-white ${className}`}>
+      {title}
+    </h1>
     <div className="border-t-2 border-gray-300 my-2" />
     <div className="grid grid-cols-4 gap-4 p-4">
       {data.map(({ label, value, fullWidth }, index) => (

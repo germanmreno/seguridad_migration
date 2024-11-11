@@ -11,7 +11,7 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
   const handleSearch = async () => {
     const searchDni = document.querySelector('input[name="searchDni"]').value;
     if (!searchDni) {
-      toast.error("Por favor, ingrese un DNI para buscar.");
+      toast.error("Por favor, ingrese un número de cédula para buscar.");
       return;
     }
 
@@ -24,7 +24,7 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
         onNext(visitor);
         toast.success(`Visitante encontrado: ${visitor.fullName}`);
       } else {
-        toast.error("No se encontró ningún visitante con ese DNI.");
+        toast.error("No se encontró ningún visitante con ese número de cédula.");
       }
     } catch (error) {
       console.error("Error searching for visitor:", error);
@@ -38,14 +38,14 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
     <div className="space-y-4">
       <h2 className="text-xl font-bold primary-text">Buscar Visitante Existente</h2>
       <span className="text-sm text-muted-foreground">
-        Ingrese el DNI del visitante para buscar sus datos.
+        Ingrese el número de cédula del visitante para buscar sus datos.
       </span>
 
       <div className="space-y-4">
         <div className="flex gap-2">
           <Input
             name="searchDni"
-            placeholder="Ingrese el DNI (Ej: V-12345678)"
+            placeholder="Ingrese el número de cédula (Ej: V-12345678)"
             className="flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {

@@ -3,9 +3,11 @@ import { PersonStanding, Search } from "lucide-react";
 
 export const VisitorTypeStep = ({ onSelectType, onBack }) => {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold primary-text">Tipo de Visitante</h2>
-      <span className="text-sm text-muted-foreground">
+    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white">
+        Tipo de Visitante
+      </h2>
+      <span className="text-sm text-gray-600 dark:text-gray-300">
         Seleccione si es un visitante nuevo o existente.
       </span>
       <div className="grid grid-cols-2 gap-4">

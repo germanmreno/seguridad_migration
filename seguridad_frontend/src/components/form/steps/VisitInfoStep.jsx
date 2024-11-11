@@ -22,23 +22,12 @@ export const VisitInfoStep = ({
   loadDirections,
   loadAreas
 }) => {
-  // Calculate column class based on number of visible selects
-  const getColSpanClass = useCallback(() => {
-    const visibleSelectsCount = 2 + (directions.length > 0 ? 1 : 0) + (areas.length > 0 ? 1 : 0);
-    switch (visibleSelectsCount) {
-      case 2: return 'col-span-2';
-      case 3: return 'col-span-1';
-      case 4: return 'col-span-1';
-      default: return 'col-span-2';
-    }
-  }, [directions.length, areas.length]);
-
-  const colSpanClass = getColSpanClass();
-
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold primary-text">Información de la Visita</h2>
-      <span className="text-sm text-muted-foreground">
+    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white">
+        Información de la Visita
+      </h2>
+      <span className="text-sm text-gray-600 dark:text-gray-300">
         Ingrese los datos de la visita. Los campos con <span className="text-red-500">*</span> son obligatorios.
       </span>
 

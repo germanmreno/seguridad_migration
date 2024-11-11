@@ -13,14 +13,14 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
 
     const searchDniInput = document.querySelector('input[name="searchDni"]').value;
     if (!searchDniInput) {
-      toast.error("Por favor, ingrese un DNI para buscar.");
+      toast.error("Por favor, ingrese un número de cédula para buscar.");
       return;
     }
 
     // Extract only the numbers from the DNI input
     const dniNumber = searchDniInput.replace(/\D/g, '');
     if (!dniNumber) {
-      toast.error("Por favor, ingrese un número de DNI válido.");
+      toast.error("Por favor, ingrese un número de cédula válido.");
       return;
     }
 
@@ -36,7 +36,7 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
         onNext(visitor);
         toast.success(`Visitante encontrado: ${visitor.fullName}`);
       } else {
-        toast.error("No se encontró ningún visitante con ese DNI.");
+        toast.error("No se encontró ningún visitante con ese número de cédula.");
       }
     } catch (error) {
       console.error("Error searching for visitor:", error);
@@ -47,17 +47,19 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold primary-text">Buscar Visitante Existente</h2>
-      <span className="text-sm text-muted-foreground">
-        Ingrese el DNI del visitante para buscar sus datos.
+    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white mb-2">
+        Buscar visitante existente
+      </h2>
+      <span className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+        Ingrese el número de cédula del visitante para buscar sus datos.
       </span>
 
       <div className="space-y-4">
         <div className="flex gap-2">
           <Input
             name="searchDni"
-            placeholder="Ingrese el DNI (Ej: V-12345678)"
+            placeholder="Ingrese el número de cédula (Ej: V-12345678)"
             className="flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {

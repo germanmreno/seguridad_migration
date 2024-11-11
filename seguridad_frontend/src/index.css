@@ -147,3 +147,24 @@ label:has(+ input:required):after {
 * {
   font-family: 'Archivo', sans-serif;
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.layout-gradient {
+  background: rgb(255, 255, 255);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(240, 240, 242, 0.95) 25%,
+    rgba(36, 56, 125, 0.05) 50%,
+    rgba(240, 240, 242, 0.95) 75%,
+    rgba(255, 255, 255, 1) 100%
+  );
+}

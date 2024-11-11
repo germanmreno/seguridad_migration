@@ -87,10 +87,16 @@ export const registerVisitor = async (formData) => {
   }
 };
 
-export const fetchDashboardStats = async (timeRange = 'week') => {
+export const fetchDashboardStats = async (
+  timeRange = 'week',
+  metric = 'visits'
+) => {
   try {
     const response = await axios.get(`${API_URL}/visitors/dashboard-stats`, {
-      params: { timeRange },
+      params: {
+        timeRange,
+        metric,
+      },
     });
     return response.data;
   } catch (error) {

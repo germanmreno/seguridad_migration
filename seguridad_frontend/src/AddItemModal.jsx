@@ -35,8 +35,7 @@ export function AddItemModal({ refreshData }) {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button
-            variant="outline"
-            className="flex flex-row items-center justify-center h-10 px-4 rounded-full bg-primary-green transition-colors hover:bg-emerald-600/80"
+            className="flex flex-row items-center justify-center h-10 px-4 bg-[var(--primary-green)] transition-colors hover:bg-[var(--primary-green)]/80"
           >
             <img src={CalendarPlus2} alt="Add register" className="mr-2" />
             <span className="primary-text text-sm text-slate-100">

@@ -4,21 +4,23 @@ import { Button } from "@/components/ui/button";
 
 export const FormEnterpriseStep = ({ form, onNext, onBack }) => {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold primary-text">Información de la Empresa</h2>
-      <span className="text-sm text-muted-foreground">
+    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white">
+        Información de la Empresa
+      </h2>
+      <span className="text-sm text-gray-600 dark:text-gray-300">
         Ingrese los datos de la empresa. Los campos con <span className="text-red-500">*</span> son obligatorios.
       </span>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/50 dark:bg-gray-900/50 p-4 rounded-lg">
         <FormField
           control={form.control}
           name="enterpriseName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-bold primary-text">Nombre de la empresa <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>Nombre de la empresa <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="Nombre de la empresa" {...field} />
+                <Input className="bg-white dark:bg-gray-800" placeholder="Nombre de la empresa" {...field} />
               </FormControl>
               <FormDescription>
                 Ingrese el nombre completo de la empresa
@@ -33,9 +35,9 @@ export const FormEnterpriseStep = ({ form, onNext, onBack }) => {
           name="enterpriseRif"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-bold primary-text">RIF de la empresa <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>RIF de la empresa <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="J-12345678-9" {...field} />
+                <Input className="bg-white dark:bg-gray-800" placeholder="J-12345678-9" {...field} />
               </FormControl>
               <FormDescription>
                 Ingrese el RIF de la empresa

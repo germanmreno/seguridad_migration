@@ -3,9 +3,11 @@ import { Car, PersonStanding } from "lucide-react";
 
 export const FormTypeStep = ({ onSelectType }) => {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold primary-text">Tipo de Registro</h2>
-      <span className="text-sm text-muted-foreground">
+    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white">
+        Tipo de Registro
+      </h2>
+      <span className="text-sm text-gray-600 dark:text-gray-300">
         Seleccione el tipo de registro a realizar.
       </span>
       <div className="grid grid-cols-2 gap-4">
