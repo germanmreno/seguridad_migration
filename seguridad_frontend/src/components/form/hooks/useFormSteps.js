@@ -11,10 +11,9 @@ import {
 export const useFormSteps = (form) => {
   const [step, setStep] = useState(STEPS.FORM_TYPE);
   const [formType, setFormType] = useState(null);
-  const [visitorType, setVisitorType] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Data states
+  // Initialize arrays with empty arrays instead of undefined
   const [entities, setEntities] = useState([]);
   const [adminUnits, setAdminUnits] = useState([]);
   const [directions, setDirections] = useState([]);
@@ -24,40 +23,59 @@ export const useFormSteps = (form) => {
     try {
       setLoading(true);
       const data = await fetchEntities();
-      setEntities(data);
+      setEntities(data || []);
     } catch (error) {
       toast.error('Error al cargar las gerencias');
       console.error('Error loading entities:', error);
+      setEntities([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const loadAdminUnits = useCallback(async (entityId) => {
-    if (!entityId) return;
+  const loadAdminUnits = async (entityId) => {
+    if (!entityId) {
+      setAdminUnits([]);
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await fetchAdminUnits(entityId);
-      setAdminUnits(data);
-      setDirections([]);
-      setAreas([]);
+      const response = await fetchAdminUnits(entityId);
+
+      if (Array.isArray(response) && response.length > 0) {
+        setAdminUnits(response);
+        // Clear the error if it exists
+        form.clearErrors('administrativeUnitId');
+      } else {
+        setAdminUnits([]);
+        form.setError('administrativeUnitId', {
+          type: 'manual',
+          message: 'No se encontraron unidades administrativas',
+        });
+      }
     } catch (error) {
-      toast.error('Error al cargar las unidades administrativas');
       console.error('Error loading admin units:', error);
+      setAdminUnits([]);
+      form.setError('administrativeUnitId', {
+        type: 'manual',
+        message: 'Error al cargar las unidades administrativas',
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   const loadDirections = useCallback(async (adminUnitId) => {
     if (!adminUnitId) return;
     try {
       setLoading(true);
       const data = await fetchDirections(adminUnitId);
-      setDirections(data);
+      setDirections(data || []);
     } catch (error) {
       toast.error('Error al cargar las direcciones');
       console.error('Error loading directions:', error);
+      setDirections([]);
     } finally {
       setLoading(false);
     }
@@ -68,10 +86,11 @@ export const useFormSteps = (form) => {
     try {
       setLoading(true);
       const data = await fetchAreas(adminUnitId);
-      setAreas(data);
+      setAreas(data || []);
     } catch (error) {
       toast.error('Error al cargar las áreas');
       console.error('Error loading areas:', error);
+      setAreas([]);
     } finally {
       setLoading(false);
     }
@@ -82,13 +101,11 @@ export const useFormSteps = (form) => {
     setStep,
     formType,
     setFormType,
-    visitorType,
-    setVisitorType,
     loading,
-    entities,
-    adminUnits,
-    directions,
-    areas,
+    entities: entities || [],
+    adminUnits: adminUnits || [],
+    directions: directions || [],
+    areas: areas || [],
     loadEntities,
     loadAdminUnits,
     loadDirections,

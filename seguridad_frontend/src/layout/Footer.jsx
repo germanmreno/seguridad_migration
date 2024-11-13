@@ -11,7 +11,7 @@ export const Footer = () => {
         </div>
         <div className="flex text-center mt-2">
           <div className="flex flex-col text-center justify-center text-white p-0">
-            <span className="primary-text text-sm ">MINISTERO DE DESARROLLO MINERO ECOLÓGICO</span>
+            <span className="primary-text text-sm ">MINISTERO DEL PODER POPULAR DE DESARROLLO MINERO ECOLÓGICO</span>
             <span className="secondary-text text-xs">Calle Cali entre Av. Veracruz y Av. Orinoco - Las Mercedes - Caracas - Venezuela.</span>
             <span className="secondary-text text-xs">Todos los derechos reservados. © COPYRIGHT {year}</span>
           </div>

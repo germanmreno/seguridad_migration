@@ -25,6 +25,29 @@ export const searchVisitor = async (dniNumber) => {
   }
 };
 
+export const searchVisitorStats = async (dniNumber) => {
+  try {
+    console.log('Calling API for visitor stats with DNI:', dniNumber);
+    const response = await fetch(
+      `${API_URL}/visitors/search-visitor?dni=${dniNumber}`
+    );
+    console.log('Raw API response:', response);
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API error response:', error);
+      throw new Error(error.details || 'El visitante no fue encontrado');
+    }
+
+    const data = await response.json();
+    console.log('API success response:', data);
+    return data;
+  } catch (error) {
+    console.error('Service error:', error);
+    throw error;
+  }
+};
+
 export const fetchEntities = async () => {
   const response = await axios.get(`${API_URL}/selects/entities`);
   return response.data;
@@ -60,7 +83,6 @@ export const fetchAreas = async (
 export const registerVisitor = async (formData) => {
   try {
     console.log('Sending request to:', `${API_URL}/visitors/register-complete`);
-    console.log('Request payload:', formData);
 
     const response = await axios.post(
       `${API_URL}/visitors/register-complete`,
@@ -73,7 +95,12 @@ export const registerVisitor = async (formData) => {
     );
 
     console.log('Server response:', response);
-    return response.data;
+
+    if (response.status === 201 && response.data) {
+      return response.data;
+    } else {
+      throw new Error('Error en el registro');
+    }
   } catch (error) {
     console.error('Registration error:', error);
     if (error.response) {

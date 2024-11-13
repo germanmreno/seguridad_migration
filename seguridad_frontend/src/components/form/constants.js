@@ -2,12 +2,11 @@ import { z } from 'zod';
 
 export const STEPS = {
   FORM_TYPE: 1,
-  VISITOR_TYPE: 2,
-  EXISTING_VISITOR: 3,
-  PERSONAL_INFO: 4,
-  ENTERPRISE_INFO: 5,
-  VISIT_INFO: 6,
-  SUMMARY: 7,
+  DNI_SEARCH: 2,
+  PERSONAL_INFO: 3,
+  ENTERPRISE_INFO: 4,
+  VISIT_INFO: 5,
+  SUMMARY: 6,
 };
 
 export const formSchema = z.object({
@@ -16,14 +15,10 @@ export const formSchema = z.object({
     message: 'El nombre debe tener al menos 2 caracteres.',
   }),
   enterpriseName: z.string().min(1, 'El nombre de la empresa es requerido'),
-  enterpriseRif: z
-    .string()
-    .min(1, 'El RIF de la empresa es requerido')
-    .regex(/^[JGVEP]-\d{8}-\d$/, 'El RIF debe tener el formato J-12345678-9'),
   lastName: z.string({ required_error: 'Campo obligatorio' }).min(2, {
     message: 'El apellido debe tener al menos 2 caracteres.',
   }),
-  dniType: z.string({ required_error: 'Campo obligatorio' }),
+  dniType: z.string().min(1, 'Tipo de cédula es requerido'),
   dniNumber: z
     .string({ required_error: 'Campo obligatorio' })
     .regex(/^\d{2,}$/, {
@@ -105,31 +100,39 @@ export const formSchema = z.object({
       }
     }),
   date: z.date({ required_error: 'Campo obligatorio' }),
-  entityId: z.number().min(1, 'Entidad es requerida'),
-  administrativeUnitId: z.number().min(1, 'Unidad Administrativa es requerida'),
+  entityId: z.number({
+    required_error: 'Por favor seleccione un ente para continuar',
+    invalid_type_error: 'Por favor seleccione un ente para continuar',
+  }),
+  administrativeUnitId: z
+    .union([z.number(), z.null()])
+    .superRefine((val, ctx) => {
+      if (!val) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Requiere seleccionar una Unidad Administrativa',
+        });
+      }
+    }),
+  administrativeUnitName: z.string().optional(),
   directionId: z.number().optional(),
   areaId: z.number().optional(),
   dateVisit: z.date(),
   dateHourVisit: z.date(),
+  visitorPhoto: z.string({
+    required_error: 'La foto del visitante es requerida',
+  }),
 });
 
 export const PHONE_OPTIONS = [
-  { id: 1, label: '+58(412)', value: '+58(412)' },
-  { id: 2, label: '+58(414)', value: '+58(414)' },
-  { id: 3, label: '+58(416)', value: '+58(416)' },
-  { id: 4, label: '+58(424)', value: '+58(424)' },
-  { id: 5, label: '+58(426)', value: '+58(426)' },
+  { id: 1, value: '+58(412)', label: '+58 (412)' },
+  { id: 2, value: '+58(414)', label: '+58 (414)' },
+  { id: 3, value: '+58(424)', label: '+58 (424)' },
+  { id: 4, value: '+58(416)', label: '+58 (416)' },
+  { id: 5, value: '+58(426)', label: '+58 (426)' },
 ];
 
 export const DNI_TYPES = [
-  {
-    id: 1,
-    value: '1',
-    label: 'V- Venezolano',
-  },
-  {
-    id: 2,
-    value: '2',
-    label: 'E- Extranjero',
-  },
+  { id: 1, value: 'V', label: 'V-' },
+  { id: 2, value: 'E', label: 'E-' },
 ];

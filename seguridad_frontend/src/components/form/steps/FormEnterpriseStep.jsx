@@ -29,23 +29,6 @@ export const FormEnterpriseStep = ({ form, onNext, onBack }) => {
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="enterpriseRif"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>RIF de la empresa <span className="text-red-500">*</span></FormLabel>
-              <FormControl>
-                <Input className="bg-white dark:bg-gray-800" placeholder="J-12345678-9" {...field} />
-              </FormControl>
-              <FormDescription>
-                Ingrese el RIF de la empresa
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
 
       <div className="flex justify-between mt-6">

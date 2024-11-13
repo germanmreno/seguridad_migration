@@ -16,67 +16,13 @@ import {
 } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Layout } from "../layout/Layout";
-
-const METRIC_LABELS = {
-  visits: 'Visitas',
-  entities: 'Entidades',
-  directions: 'Direcciones',
-  departments: 'Departamentos',
-  areas: 'Áreas',
-};
-
-const METRIC_DESCRIPTIONS = {
-  visits: 'visitas por día',
-  entities: 'visitas por entidad',
-  directions: 'visitas por dirección',
-  departments: 'visitas por departamento',
-  areas: 'visitas por área',
-};
-
-// Color constants for the charts
-const CHART_COLORS = {
-  primary: {
-    blue: {
-      100: 'rgb(219 234 254)', // light blue
-      200: 'rgb(191 219 254)',
-      300: 'rgb(147 197 253)',
-      400: 'rgb(96 165 250)',
-      500: 'rgb(59 130 246)', // main blue
-      600: 'rgb(37 99 235)',  // darker blue
-    },
-    green: {
-      100: 'rgb(220 252 231)', // light green
-      200: 'rgb(187 247 208)',
-      300: 'rgb(134 239 172)',
-      400: 'rgb(74 222 128)',
-      500: 'rgb(34 197 94)',  // main green
-      600: 'rgb(22 163 74)',  // darker green
-    }
-  }
-};
-
-// Color schemes for different chart types
-const CHART_SCHEMES = {
-  bar: [
-    CHART_COLORS.primary.blue[500],
-    CHART_COLORS.primary.green[500],
-    CHART_COLORS.primary.blue[400],
-    CHART_COLORS.primary.green[400],
-    CHART_COLORS.primary.blue[300],
-  ],
-  pie: [
-    CHART_COLORS.primary.blue[600],
-    CHART_COLORS.primary.green[500],
-    CHART_COLORS.primary.blue[400],
-    CHART_COLORS.primary.green[400],
-    CHART_COLORS.primary.blue[300],
-    CHART_COLORS.primary.green[300],
-  ],
-  gradient: {
-    from: CHART_COLORS.primary.blue[400],
-    to: CHART_COLORS.primary.green[400],
-  }
-};
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Button } from "@/components/ui/button";
+import ReactDOM from 'react-dom/client';
+import { PDFLayout } from "./PDFLayout";
+import { CHART_COLORS, CHART_SCHEMES, METRIC_LABELS, METRIC_DESCRIPTIONS } from "../constants/chartConstants";
+import { DownloadIcon, Printer } from "lucide-react";
 
 export function VisitsDashboard() {
   const [timeRange, setTimeRange] = useState("week");
@@ -101,6 +47,80 @@ export function VisitsDashboard() {
     loadDashboardData();
   }, [timeRange, selectedMetric]);
 
+  const handleExportPDF = async () => {
+    // Create temporary PDF layout
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.position = 'absolute';
+    pdfContainer.style.left = '-9999px';
+    document.body.appendChild(pdfContainer);
+
+    // Render PDF layout
+    const root = ReactDOM.createRoot(pdfContainer);
+    root.render(
+      <PDFLayout
+        stats={stats}
+        charts={charts}
+        selectedMetric={selectedMetric}
+        timeRange={timeRange}
+      />
+    );
+
+    // Wait for charts to render
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const canvas = await html2canvas(pdfContainer, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+
+      // Use A4 dimensions
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Calculate image dimensions to fit A4
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Add multiple pages if content is too long
+      let heightLeft = imgHeight;
+      let position = 0;
+      let pageNumber = 1;
+
+      while (heightLeft >= 0) {
+        if (pageNumber > 1) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(
+          imgData,
+          'PNG',
+          0,
+          position,
+          imgWidth,
+          imgHeight
+        );
+
+        heightLeft -= pageHeight;
+        position -= pageHeight;
+        pageNumber++;
+      }
+
+      pdf.save('dashboard-report.pdf');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Error al generar el PDF');
+    } finally {
+      // Cleanup
+      document.body.removeChild(pdfContainer);
+    }
+  };
+
   if (loading || !dashboardData) {
     return (
       <Layout>
@@ -117,13 +137,23 @@ export function VisitsDashboard() {
     <Layout>
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="bg-[#24387d] text-white rounded-t-lg w-full">
-          <div className="h-12 flex items-center p-4">
+          <div className="h-12 flex items-center justify-between p-4">
             <h1 className="primary-text p-0 m-0">
               PANEL DE ESTADÍSTICAS DE VISITAS
             </h1>
+            <Button
+              onClick={handleExportPDF}
+              className="bg-white text-[#24387d] hover:bg-white/90"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
           </div>
         </div>
-        <div className="p-8 space-y-6 bg-background/95 min-h-screen backdrop-blur-sm rounded-xl border border-primary/10 shadow-lg">
+        <div
+          id="dashboard-content"
+          className="p-8 space-y-6 bg-background/95 min-h-screen backdrop-blur-sm rounded-xl border border-primary/10 shadow-lg"
+        >
           {/* Time Range and Metric Selectors */}
           <div className="flex justify-end mb-6 space-x-4">
             <Select

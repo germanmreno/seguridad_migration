@@ -22,52 +22,60 @@ export const VisitInfoStep = ({
   loadDirections,
   loadAreas
 }) => {
-  return (
-    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
-      <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white">
-        Información de la Visita
-      </h2>
-      <span className="text-sm text-gray-600 dark:text-gray-300">
-        Ingrese los datos de la visita. Los campos con <span className="text-red-500">*</span> son obligatorios.
-      </span>
+  const colSpanClass = "col-span-4 sm:col-span-2 lg:col-span-1";
 
-      <div className="grid grid-cols-4 gap-4">
-        <SelectFields
-          form={form}
-          loading={loading}
-          entities={entities}
-          adminUnits={adminUnits}
-          directions={directions}
-          areas={areas}
-          colSpanClass={colSpanClass}
-          loadEntities={loadEntities}
-          loadAdminUnits={loadAdminUnits}
-          loadDirections={loadDirections}
-          loadAreas={loadAreas}
-        />
+  return (
+    <div className="flex flex-col h-full max-h-[calc(100vh-100px)]">
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-4 p-4">
+          <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white sticky top-0 z-10">
+            Información de la Visita
+          </h2>
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            Indique la información de la visita actual.
+          </span>
+
+          <div className="grid grid-cols-4 gap-4">
+            <SelectFields
+              form={form}
+              loading={loading}
+              entities={entities}
+              adminUnits={adminUnits}
+              directions={directions}
+              areas={areas}
+              colSpanClass={colSpanClass}
+              loadEntities={loadEntities}
+              loadAdminUnits={loadAdminUnits}
+              loadDirections={loadDirections}
+              loadAreas={loadAreas}
+            />
+          </div>
+
+          <AdditionalFields form={form} />
+        </div>
       </div>
 
-      <AdditionalFields form={form} />
-
-      <div className="flex justify-between mt-6">
-        <Button type="button" onClick={onBack} variant="outline">
-          Atrás
-        </Button>
-        <Button
-          type="button"
-          onClick={() => {
-            form.trigger([
-              'entityId',
-              'administrativeUnitId',
-              'contact',
-              'observation'
-            ]).then(isValid => {
-              if (isValid) onNext();
-            });
-          }}
-        >
-          Siguiente
-        </Button>
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border-t mt-auto">
+        <div className="flex justify-between">
+          <Button type="button" onClick={onBack} variant="outline">
+            Atrás
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              form.trigger([
+                'entityId',
+                'administrativeUnitId',
+                'contact',
+                'observation'
+              ]).then(isValid => {
+                if (isValid) onNext();
+              });
+            }}
+          >
+            Siguiente
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -128,7 +136,7 @@ const SelectFields = ({
               value={field.value?.toString() || ""}
             >
               <FormControl>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-white dark:bg-gray-800">
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -189,7 +197,7 @@ const SelectFields = ({
               value={field.value?.toString() || ""}
             >
               <FormControl>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-white dark:bg-gray-800">
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -244,7 +252,7 @@ const SelectFields = ({
                 value={field.value?.toString() || ""}
               >
                 <FormControl>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-800">
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -300,7 +308,7 @@ const SelectFields = ({
                 value={field.value?.toString() || ""}
               >
                 <FormControl>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full bg-white dark:bg-gray-800">
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -350,7 +358,11 @@ const AdditionalFields = ({ form }) => (
         <FormItem className="col-span-2">
           <FormLabel className="font-bold primary-text">Persona a visitar <span className="text-red-500">*</span></FormLabel>
           <FormControl>
-            <Input placeholder="Nombre de la persona a visitar" {...field} />
+            <Input
+              className="bg-white dark:bg-gray-800"
+              placeholder="Nombre de la persona a visitar"
+              {...field}
+            />
           </FormControl>
           <FormDescription>
             Ingrese el nombre de la persona que será visitada.
@@ -426,7 +438,11 @@ const AdditionalFields = ({ form }) => (
         <FormItem className="col-span-2" >
           <FormLabel className="font-bold primary-text">Observación</FormLabel>
           <FormControl>
-            <Textarea placeholder="Ingrese una observación..." {...field} />
+            <Textarea
+              className="bg-white dark:bg-gray-800"
+              placeholder="Ingrese una observación..."
+              {...field}
+            />
           </FormControl>
           <FormDescription>
             Ingrese una observación (opcional).

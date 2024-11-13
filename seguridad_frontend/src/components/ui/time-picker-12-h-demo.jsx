@@ -4,8 +4,9 @@ import * as React from "react";
 import { Label } from "@/components/ui/label";
 import { TimePickerInput } from "./time-picker-input";
 import { TimePeriodSelect } from "./period-select";
+import { cn } from "@/lib/utils";
 
-export function TimePicker12Demo({ date, setDate, period }) {
+export function TimePicker12Demo({ date, setDate, period, className }) {
   const [periodState, setPeriodState] = React.useState(period);
   console.log(period)
 
@@ -15,7 +16,7 @@ export function TimePicker12Demo({ date, setDate, period }) {
   const periodRef = React.useRef(null);
 
   return (
-    <div className="flex gap-2">
+    <div className={cn("flex items-center space-x-2", className)}>
       <div className="grid gap-1 text-center">
         <Label htmlFor="hours" className="text-xs">
           Hora
@@ -27,6 +28,7 @@ export function TimePicker12Demo({ date, setDate, period }) {
           setDate={setDate}
           ref={hourRef}
           onRightFocus={() => minuteRef.current?.focus()}
+          className="bg-white dark:bg-gray-800"
         />
       </div>
       <div className="grid gap-1 text-center">
@@ -41,6 +43,7 @@ export function TimePicker12Demo({ date, setDate, period }) {
           ref={minuteRef}
           onLeftFocus={() => hourRef.current?.focus()}
           onRightFocus={() => secondRef.current?.focus()}
+          className="bg-white dark:bg-gray-800"
         />
       </div>
 
@@ -55,6 +58,7 @@ export function TimePicker12Demo({ date, setDate, period }) {
           setDate={setDate}
           ref={periodRef}
           onLeftFocus={() => secondRef.current?.focus()}
+          className="bg-white dark:bg-gray-800"
         />
       </div>
     </div>

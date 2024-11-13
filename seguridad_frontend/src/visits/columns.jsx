@@ -20,7 +20,6 @@ export const myCustomFilterFn = (row, id, filterValue) => {
     fullName: row.original.visitor?.fullName,
     dni: `${row.original.visitor?.dniType}-${row.original.visitor?.dniNumber}`,
     company: row.original.visitor?.company?.name,
-    companyRif: row.original.visitor?.company?.rif,
     phone: row.original.visitor?.contactNumber,
     entity: row.original.location?.entity,
     gerency: row.original.location?.administrativeUnit,
@@ -131,21 +130,6 @@ export const columns = [
     },
   },
   {
-    id: "companyRif",
-    accessorFn: (row) => row.visitor?.company?.rif ?? 'N/A',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Empresa
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-  },
-  {
     id: "phone",
     accessorFn: (row) => row.visitor?.contactNumber ?? 'N/A',
     header: "Teléfono",
@@ -174,7 +158,7 @@ export const columns = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Gerencia
+          Unidad Administrativa
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )

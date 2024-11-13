@@ -43,15 +43,17 @@ export function AddItemModal({ refreshData }) {
             </span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[1200px]">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-[1200px] min-h-fit max-h-[90vh] p-0 pb-4">
+          <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>Añadir nuevo registro</DialogTitle>
             <DialogDescription>
               Siga los pasos para registrar una nueva entrada.
             </DialogDescription>
-            <hr className="my-4 border-gray-200" />
           </DialogHeader>
-          <AddItemForm onSubmitSuccess={handleSubmitSuccess} />
+
+          <div className="flex-1 min-h-[400px] max-h-[calc(90vh-80px)] overflow-hidden">
+            <AddItemForm onSubmitSuccess={handleSubmitSuccess} />
+          </div>
         </DialogContent>
       </Dialog>
 

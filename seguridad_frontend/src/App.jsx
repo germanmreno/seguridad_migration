@@ -5,6 +5,7 @@ import { EntriesPage } from './EntriesPage';
 import { useState, useEffect, useCallback } from 'react';
 import { NavBar } from './layout/NavBar';
 import { VisitsDashboard } from './components/VisitsDashboard';
+import { StatsSearch } from './components/StatsSearch';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -47,10 +48,16 @@ function App() {
               <EntriesPage user={user} />
             </>
           } />
-          <Route path="/visits-dashboard" element={
+          <Route path="/reports-dashboard" element={
             <>
               <NavBar handleLogout={handleLogout} user={user} />
               <VisitsDashboard user={user} />
+            </>
+          } />
+          <Route path="/statistics-dashboard" element={
+            <>
+              <NavBar handleLogout={handleLogout} user={user} />
+              <StatsSearch user={user} />
             </>
           } />
         </Route>

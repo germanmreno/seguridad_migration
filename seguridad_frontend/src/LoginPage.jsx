@@ -42,7 +42,7 @@ export const LoginPage = ({ setIsAuthenticated, setUser }) => {
 
   return (
     <div className="flex max-h-screen">
-      <div className="hidden lg:block relative min-w-[1000px] h-screen bg-no-repeat bg-cover bg-[center_top_-8rem] border-r-4" style={{ backgroundImage: `url(/background_login.png)` }}>
+      <div className="hidden lg:block relative min-w-[1000px] h-screen bg-no-repeat bg-cover border-r-4" style={{ backgroundImage: `url(/midme_background.jpeg)` }}>
       </div>
 
       <div className="w-full lg:min-w-2/3 p-8 flex flex-col justify-center items-center bg-cover bg-center h-screen" style={{ backgroundImage: `url(/background.png)` }}>

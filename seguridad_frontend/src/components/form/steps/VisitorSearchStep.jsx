@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { searchVisitor } from "../services/visitorService";
 
-export const ExistingVisitorStep = ({ onNext, onBack }) => {
+export const VisitorSearchStep = ({ onNext, onBack }) => {
   const [isSearching, setIsSearching] = useState(false);
 
   const handleSearch = async (e) => {
@@ -13,46 +13,76 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
 
     const searchDniInput = document.querySelector('input[name="searchDni"]').value;
     if (!searchDniInput) {
-      toast.error("Por favor, ingrese un número de cédula para buscar.");
+      toast.error("Por favor, ingrese un número de cédula para continuar.");
       return;
     }
 
-    // Extract only the numbers from the DNI input
-    const dniNumber = searchDniInput.replace(/\D/g, '');
-    if (!dniNumber) {
-      toast.error("Por favor, ingrese un número de cédula válido.");
+    const dniMatch = searchDniInput.match(/^([VE])-?(\d+)$/i);
+    if (!dniMatch) {
+      toast.error("Formato de cédula inválido. Use V-12345678 o E-12345678");
       return;
     }
 
+    const [, inputDniType, dniNumber] = dniMatch;
     setIsSearching(true);
+
     try {
-      console.log('Searching for DNI:', dniNumber);
       const response = await searchVisitor(parseInt(dniNumber));
       console.log('Search response:', response);
 
-      if (response.exists) {
-        const { visitor } = response;
-        console.log('Found visitor:', visitor);
+      if (response.exists && response.visitor) {
+        const visitor = {
+          ...response.visitor,
+          dniType: response.visitor.dniType?.abbreviation || inputDniType.toUpperCase(),
+          dniNumber: parseInt(dniNumber),
+          isNewVisitor: false,
+          contactInfo: response.visitor.contactInfo || null,
+          company: response.visitor.company || null
+        };
+        console.log('Passing visitor data:', visitor);
         onNext(visitor);
-        toast.success(`Visitante encontrado: ${visitor.fullName}`);
+        toast.success("Datos del visitante cargados");
       } else {
-        toast.error("No se encontró ningún visitante con ese número de cédula.");
+        const newVisitor = {
+          dniType: inputDniType.toUpperCase(),
+          dniNumber: parseInt(dniNumber),
+          isNewVisitor: true,
+          firstName: "",
+          lastName: "",
+          contactInfo: null,
+          company: null,
+          vehicle: null
+        };
+        console.log('Passing new visitor data:', newVisitor);
+        onNext(newVisitor);
+        toast.info("Visitante no encontrado. Complete el formulario para nuevo registro.");
       }
     } catch (error) {
-      console.error("Error searching for visitor:", error);
-      toast.error(error.details || "Hubo un problema al buscar el visitante. Por favor, intente de nuevo.");
+      console.error('Search error:', error);
+      const newVisitor = {
+        dniType: inputDniType.toUpperCase(),
+        dniNumber: parseInt(dniNumber),
+        isNewVisitor: true,
+        firstName: "",
+        lastName: "",
+        contactInfo: null,
+        company: null,
+        vehicle: null
+      };
+      onNext(newVisitor);
+      toast.info("Iniciando registro de nuevo visitante");
     } finally {
       setIsSearching(false);
     }
   };
 
   return (
-    <div className="space-y-4 bg-gray-100/90 dark:bg-gray-950/90 p-6 rounded-lg">
+    <div className="space-y-4 p-6">
       <h2 className="text-xl font-bold bg-blue-800 px-4 py-2 rounded-md text-white mb-2">
-        Buscar visitante existente
+        Registro de Visitante
       </h2>
       <span className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-        Ingrese el número de cédula del visitante para buscar sus datos.
+        Ingrese el número de cédula del visitante para continuar.
       </span>
 
       <div className="space-y-4">
@@ -76,7 +106,7 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
             {isSearching ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Buscar"
+              "Continuar"
             )}
           </Button>
         </div>
@@ -93,4 +123,4 @@ export const ExistingVisitorStep = ({ onNext, onBack }) => {
       </div>
     </div>
   );
-};
+}; 
